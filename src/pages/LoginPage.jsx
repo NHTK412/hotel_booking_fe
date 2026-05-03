@@ -1,6 +1,6 @@
 import { Button, Checkbox, Form, Image, Input, notification } from "antd";
-import { Login } from "../services/AuthService";
 import { useNavigate } from "react-router-dom";
+import { login } from "../services/AuthService";
 
 const LoginPage = () => {
 
@@ -9,35 +9,33 @@ const LoginPage = () => {
     const navigate = useNavigate();
 
     const handleLogin = async (values) => {
-
-        const {
-            username,
-            password
-        } = values;
-
+        const { username, password, remember } = values;
         try {
-            const response = await Login(username, password);
-            if (response && response.access_token) {
-                localStorage.setItem('access_token', response.access_token);
+            const response = await login(username, password);
+            if (response && response.data.accessToken) {
+                localStorage.removeItem('accessToken');
+                sessionStorage.removeItem('accessToken');
+
+                if (remember) {
+                    localStorage.setItem('accessToken', response.data.accessToken);
+                }
+                else {
+                    sessionStorage.setItem('accessToken', response.data.accessToken);
+                }
             }
             notification.success({
-                message: 'Đăng Nhập Thành Công',
+                title: 'Đăng Nhập Thành Công',
                 description: 'Bạn đã đăng nhập thành công.',
             })
-
             navigate("/");
-
-
         }
         catch (error) {
             console.error("Login error:", error);
             notification.error({
-                message: 'Đăng Nhập Thất Bại',
+                title: 'Đăng Nhập Thất Bại',
                 description: error.response?.data?.message || 'Đã xảy ra lỗi trong quá trình đăng nhập.',
             })
         }
-
-
     }
 
     return (
@@ -80,7 +78,7 @@ const LoginPage = () => {
                             </Form.Item>
 
                             <Form.Item name="remember" valuePropName="checked">
-                                <Checkbox>Remember me</Checkbox>
+                                <Checkbox>Ghi nhớ đăng nhập</Checkbox>
                             </Form.Item>
 
                             <Button
@@ -92,7 +90,7 @@ const LoginPage = () => {
                                 }
                                 block
                             >
-                                Submit
+                                Đăng Nhập
                             </Button>
 
                         </Form>

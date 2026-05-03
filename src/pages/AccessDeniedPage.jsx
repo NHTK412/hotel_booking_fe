@@ -1,7 +1,7 @@
 import { Button, Result } from "antd";
 import { useNavigate } from "react-router-dom";
 
-const ErrorNoAccessPage = () => {
+const AccessDeniedPage = () => {
 
     const navigate = useNavigate();
 
@@ -21,4 +21,4 @@ const ErrorNoAccessPage = () => {
     );
 }
 
-export default ErrorNoAccessPage;
+export default AccessDeniedPage;

@@ -1,9 +1,10 @@
-import { useState } from "react";
-import { Layout, Avatar, Button } from "antd";
+import { useContext, useState } from "react";
+import { Layout, Avatar, Button, Spin } from "antd";
 import { MenuFoldOutlined, MenuUnfoldOutlined, UserOutlined } from '@ant-design/icons';
 import Navigation from "../components/Navigation";
 import { Outlet } from "react-router-dom";
 import SelectHotel from "../components/SelectHotel";
+import { globalContext } from "../context/GlobalContext";
 
 const { Header, Sider, Content } = Layout;
 
@@ -17,6 +18,8 @@ const DashboardLayout = ({ children }) => {
     ]
 
     const [currentHotel, setCurrentHotel] = useState(hotelList[0]);
+
+    const { userInfo, isLoading } = useContext(globalContext);
 
     return (
         <Layout style={{ minHeight: "100vh" }}>
@@ -43,25 +46,24 @@ const DashboardLayout = ({ children }) => {
                         background: '#fff'
                     }}
                 >
-                    {/* <div className="flex items-center gap-4 px-4">
-                        {collapsed ? (
-                            <MenuUnfoldOutlined className="text-lg cursor-pointer" onClick={() => setCollapsed(false)} />
-                        ) : (
-                            <MenuFoldOutlined className="text-lg cursor-pointer" onClick={() => setCollapsed(true)} />
-                        )}
-                        <h1 className="text-lg font-semibold m-0">Dashboard</h1>
-                    </div> */}
 
-                    {/* <div className="text-lg ml-5 cursor-pointer bg-blue-100 px-10 py-2 rounded-lg text-blue-300">
-                        Khách sạn ABC
-                    </div> */}
 
                     <SelectHotel hotelList={hotelList} currentHotel={currentHotel} setCurrentHotel={setCurrentHotel} />
 
-                    <div className="flex items-center gap-3 pr-4">
-                        <span className="text-sm text-gray-600">Admin</span>
-                        <Avatar icon={<UserOutlined />} />
-                    </div>
+                    {
+                        isLoading ? (
+                            <div className="flex justify-center items-center mr-10">
+                                <Spin />
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-3 pr-4">
+                                <span className="text-sm text-gray-600">{userInfo?.name}</span>
+                                <Avatar src={userInfo?.avatarUrl}>
+                                    <UserOutlined />
+                                </Avatar>
+                            </div>
+                        )
+                    }
                 </Header>
 
                 <Content

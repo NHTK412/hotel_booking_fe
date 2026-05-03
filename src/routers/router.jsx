@@ -1,15 +1,27 @@
 import { createBrowserRouter } from "react-router-dom";
 import DashboardLayout from "../layouts/DashboardLayout";
 import LoginPage from "../pages/LoginPage";
+import PrivateRoute from "./PrivateRoute";
+import PublicRoute from "./PublicRoute";
+import UserInfo from "../components/UserInfo";
+import UserPage from "../pages/UserPage";
 
 const router = createBrowserRouter([
     {
         path: "/login",
-        element: <LoginPage></LoginPage>
+        element: (
+            <PublicRoute>
+                <LoginPage></LoginPage>
+            </PublicRoute>
+        )
     },
     {
         path: "/",
-        element: <DashboardLayout></DashboardLayout>,
+        element: (
+            <PrivateRoute>
+                <DashboardLayout></DashboardLayout>
+            </PrivateRoute>
+        ),
         children: [
             {
                 index: true,
@@ -25,12 +37,12 @@ const router = createBrowserRouter([
             },
             {
                 path: "me",
-                element: <h2 className="text-2xl font-medium">My Profile</h2>
+                element: <UserPage></UserPage>
             },
-            {
-                path: "hotels",
-                element: <h2 className="text-2xl font-medium">Hotels List</h2>
-            }
+            // {
+            //     path: "hotels",
+            //     element: <h2 className="text-2xl font-medium">Hotels List</h2>
+            // }
         ]
     }
 ])

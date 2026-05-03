@@ -20,7 +20,7 @@ const Navigation = ({ collapsed: collapsedProp, onToggle }) => {
 
     const items = [
         { key: '1', icon: <PieChartOutlined />, label: 'Trang Chủ', path: "/" },
-        { key: '2', icon: <SolutionOutlined />, label: 'Thông Tin Khách Sạn', path: "/hotels" },
+        // { key: '2', icon: <SolutionOutlined />, label: 'Thông Tin Khách Sạn', path: "/hotels" },
         { key: '3', icon: <UserOutlined />, label: 'Thông Tin Nhân Viên', path: "/me" },
         { key: '4', icon: <HomeOutlined />, label: 'Danh Sách Phòng', path: "/rooms" },
         { key: '5', icon: <BookOutlined />, label: 'Danh Sách Đặt Phòng', path: "/bookings" },

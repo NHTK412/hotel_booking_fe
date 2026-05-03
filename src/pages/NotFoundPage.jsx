@@ -1,7 +1,7 @@
 import { Button, Result } from "antd";
 import { useNavigate } from "react-router-dom";
 
-const ErrorPage = () => {
+const NotFoundPage = () => {
 
     const navigate = useNavigate();
 
@@ -18,4 +18,4 @@ const ErrorPage = () => {
 }
 
 
-export default ErrorPage;
+export default NotFoundPage;
