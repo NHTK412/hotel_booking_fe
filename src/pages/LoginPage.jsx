@@ -1,0 +1,108 @@
+import { Button, Checkbox, Form, Image, Input, notification } from "antd";
+import { Login } from "../services/AuthService";
+import { useNavigate } from "react-router-dom";
+
+const LoginPage = () => {
+
+    const [form] = Form.useForm();
+
+    const navigate = useNavigate();
+
+    const handleLogin = async (values) => {
+
+        const {
+            username,
+            password
+        } = values;
+
+        try {
+            const response = await Login(username, password);
+            if (response && response.access_token) {
+                localStorage.setItem('access_token', response.access_token);
+            }
+            notification.success({
+                message: 'Đăng Nhập Thành Công',
+                description: 'Bạn đã đăng nhập thành công.',
+            })
+
+            navigate("/");
+
+
+        }
+        catch (error) {
+            console.error("Login error:", error);
+            notification.error({
+                message: 'Đăng Nhập Thất Bại',
+                description: error.response?.data?.message || 'Đã xảy ra lỗi trong quá trình đăng nhập.',
+            })
+        }
+
+
+    }
+
+    return (
+        <>
+            <div className="flex flex-row justify-center items-center h-screen bg-gray-100">
+
+                <div className="flex shadow-md rounded-lg overflow-hidden">
+                    <img
+                        className="w-[50vh] h-[50vh] hidden md:block rounded-l-lg shadow-md"
+                        src="https://acihome.vn/uploads/15/thiet-ke-khach-san-ven-bien-dang-cap-nghi-duong-5-sao-tien-nghi-hien-dai-2.JPG"
+                        alt="Ảnh Lỗi"
+                    />
+                    <div className="w-[400px] p-10 flex flex-col justify-center bg-white">
+                        <h1 className="text-2xl font-bold mb-5 text-center">
+                            Đăng Nhập Tài Khoản
+                        </h1>
+
+                        <Form
+                            form={form}
+                            name="login"
+                            layout="vertical"
+                            initialValues={{ remember: true }}
+                            onFinish={handleLogin}
+                        >
+
+                            <Form.Item
+                                label="Username"
+                                name="username"
+                                rules={[{ required: true, message: 'Please input your username!' }]}
+                            >
+                                <Input />
+                            </Form.Item>
+
+                            <Form.Item
+                                label="Password"
+                                name="password"
+                                rules={[{ required: true, message: 'Please input your password!' }]}
+                            >
+                                <Input.Password />
+                            </Form.Item>
+
+                            <Form.Item name="remember" valuePropName="checked">
+                                <Checkbox>Remember me</Checkbox>
+                            </Form.Item>
+
+                            <Button
+                                type="primary"
+                                onClick={
+                                    () => {
+                                        form.submit();
+                                    }
+                                }
+                                block
+                            >
+                                Submit
+                            </Button>
+
+                        </Form>
+                    </div>
+
+                </div>
+            </div>
+        </>
+    );
+}
+
+
+export default LoginPage;
