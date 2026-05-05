@@ -1,7 +1,7 @@
 import { Button, Modal } from "antd";
 import { useState } from "react";
 
-const SelectHotel = ({ hotelList, currentHotel, setCurrentHotel }) => {
+const SelectHotel = ({ hotelList, hotelCurrent, setHotelCurrent }) => {
 
 
 
@@ -11,7 +11,7 @@ const SelectHotel = ({ hotelList, currentHotel, setCurrentHotel }) => {
         <div>
             <Button className="ml-5" type="primary" onClick={() => setIsModalOpen(true)}>
                 {/* Khách Sạn ABC */}
-                {currentHotel ? currentHotel.name : "Chọn khách sạn"}
+                {hotelList[hotelCurrent]?.accommodationName || "Chọn khách sạn"}
             </Button>
             <Modal
                 title="Chọn khách sạn"
@@ -21,16 +21,17 @@ const SelectHotel = ({ hotelList, currentHotel, setCurrentHotel }) => {
             // open={false}
             // onOk={() => { }}
             >
-                {hotelList.map(hotel => (
+                {hotelList.map((hotel, index) => (
                     <div
                         key={hotel.id}
                         className="p-2 hover:bg-gray-100 cursor-pointer rounded"
                         onClick={() => {
-                            setCurrentHotel(hotel);
+                            // setHotelCurrent(hotel.id);
+                            setHotelCurrent(index); 
                             setIsModalOpen(false);
                         }}
                     >
-                        {hotel.name}
+                        #{hotel.accommodationId} - {hotel.accommodationName}
                     </div>
                 ))}
             </Modal>

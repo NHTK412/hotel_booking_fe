@@ -11,15 +11,20 @@ const { Header, Sider, Content } = Layout;
 const DashboardLayout = ({ children }) => {
     const [collapsed, setCollapsed] = useState(false);
 
-    const hotelList = [
-        { id: 1, name: "Khách sạn ABC" },
-        { id: 2, name: "Khách sạn XYZ" },
-        { id: 3, name: "Khách sạn DEF" },
-    ]
+    // const hotelList = [
+    //     { id: 1, name: "Khách sạn ABC" },
+    //     { id: 2, name: "Khách sạn XYZ" },
+    //     { id: 3, name: "Khách sạn DEF" },
+    // ]
 
-    const [currentHotel, setCurrentHotel] = useState(hotelList[0]);
+    const { listHotel } = useContext(globalContext);
 
-    const { userInfo, isLoading } = useContext(globalContext);
+    // const [currentHotel, setCurrentHotel] = useState(listHotel[0]);
+
+    const { userInfo, hotelCurrent, setHotelCurrent
+        // , 
+        // isLoading 
+    } = useContext(globalContext);
 
     return (
         <Layout style={{ minHeight: "100vh" }}>
@@ -36,6 +41,7 @@ const DashboardLayout = ({ children }) => {
                     {!collapsed ? "Hotel-Admin" : "HA"}
                 </div>
                 <Navigation collapsed={collapsed} onToggle={() => setCollapsed(!collapsed)} />
+
             </Sider>
 
             <Layout>
@@ -48,9 +54,9 @@ const DashboardLayout = ({ children }) => {
                 >
 
 
-                    <SelectHotel hotelList={hotelList} currentHotel={currentHotel} setCurrentHotel={setCurrentHotel} />
+                    <SelectHotel hotelList={listHotel} hotelCurrent={hotelCurrent} setHotelCurrent={setHotelCurrent} />
 
-                    {
+                    {/* {
                         isLoading ? (
                             <div className="flex justify-center items-center mr-10">
                                 <Spin />
@@ -63,7 +69,13 @@ const DashboardLayout = ({ children }) => {
                                 </Avatar>
                             </div>
                         )
-                    }
+                    } */}
+                    <div className="flex items-center gap-3 pr-4">
+                        <span className="text-sm text-gray-600">{userInfo?.name}</span>
+                        <Avatar src={userInfo?.avatarUrl}>
+                            <UserOutlined />
+                        </Avatar>
+                    </div>
                 </Header>
 
                 <Content

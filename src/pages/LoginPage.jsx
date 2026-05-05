@@ -12,6 +12,7 @@ const LoginPage = () => {
         const { username, password, remember } = values;
         try {
             const response = await login(username, password);
+
             if (response && response.data.accessToken) {
                 localStorage.removeItem('accessToken');
                 sessionStorage.removeItem('accessToken');
@@ -23,11 +24,18 @@ const LoginPage = () => {
                     sessionStorage.setItem('accessToken', response.data.accessToken);
                 }
             }
+
             notification.success({
                 title: 'Đăng Nhập Thành Công',
                 description: 'Bạn đã đăng nhập thành công.',
             })
-            navigate("/");
+
+            if (response && response.data.role === "ROLE_HOST") {
+                navigate("/");
+            }
+            else {
+                navigate("/user-dashboard");
+            }
         }
         catch (error) {
             console.error("Login error:", error);

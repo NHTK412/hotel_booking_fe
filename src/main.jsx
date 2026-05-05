@@ -6,9 +6,10 @@ import router from './routers/router.jsx'
 import { GlobalProvider } from './context/GlobalContext.jsx'
 
 createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <GlobalProvider>
-      <RouterProvider router={router} />
-    </GlobalProvider>
-  </StrictMode>,
+  // <StrictMode>
+  //   <RouterProvider router={router} />
+  // </StrictMode>,
+  <>
+    <RouterProvider router={router} />
+  </>
 )

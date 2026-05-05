@@ -6,7 +6,23 @@ import { globalContext } from "../context/GlobalContext";
 
 const HotelInfo = () => {
 
-    const { userInfo, isLoading } = useContext(globalContext);
+    const { listHotel, hotelCurrent, isLoading } = useContext(globalContext);
+
+    const hotel = listHotel[hotelCurrent];
+    // {
+    //     {
+    //         "accommodationId": 3,
+    //             "accommodationName": "Khách Sạn Thiên Minh",
+    //                 "address": "168 Nguyễn Gia Trí",
+    //                     "averageRating": 3,
+    //                         "discountMinPricePerNight": 20,
+    //                             "image": "accommodation-image.png",
+    //                                 "lat": 10.8058,
+    //                                     "lng": 106.718,
+    //                                         "minPricePerNight": 100000,
+    //                                             "type": "Khách sạn"
+    //     }
+    // }
 
     return (
         <>
@@ -21,50 +37,64 @@ const HotelInfo = () => {
                         <div className="space-y-6">
                             <h2 className="text-xl font-semibold">
                                 Thông Tin Khách Sạn
-                                <span className="text-xl text-gray-500 ml-2">#{userInfo?.id}</span>
+                                <span className="text-xl text-gray-500 ml-2">
+                                    #{hotel?.accommodationId}
+                                </span>
                             </h2>
+
                             <div className="flex gap-6">
                                 <div className="flex-shrink-0 mr-15">
                                     <Image
                                         width={200}
-                                        src={userInfo?.avatarUrl}
+                                        src={hotel?.image}
                                         className="rounded-xl object-cover"
                                     />
                                 </div>
+
                                 <div className="flex-1 grid grid-cols-2 gap-x-8 gap-y-4 text-sm items-center">
 
                                     <div>
-                                        <p className="text-gray-500">Họ và tên</p>
-                                        <p className="font-medium">{userInfo?.name}</p>
+                                        <p className="text-gray-500">Tên khách sạn</p>
+                                        <p className="font-medium">{hotel?.accommodationName}</p>
                                     </div>
 
                                     <div>
-                                        <p className="text-gray-500">Email</p>
-                                        <p className="font-medium">{userInfo?.email}</p>
+                                        <p className="text-gray-500">Loại</p>
+                                        <p className="font-medium">{hotel?.type}</p>
                                     </div>
 
                                     <div>
-                                        <p className="text-gray-500">Giới tính</p>
-                                        <p className="font-medium">{userInfo?.gender}</p>
+                                        <p className="text-gray-500">Địa chỉ</p>
+                                        <p className="font-medium">{hotel?.address}</p>
                                     </div>
 
                                     <div>
-                                        <p className="text-gray-500">Ngày sinh</p>
+                                        <p className="text-gray-500">Đánh giá trung bình</p>
+                                        <p className="font-medium">{hotel?.averageRating}</p>
+                                    </div>
+
+                                    <div>
+                                        <p className="text-gray-500">Giá thấp nhất</p>
                                         <p className="font-medium">
-                                            {userInfo?.birthday
-                                                ? new Date(userInfo.birthday).toLocaleDateString()
-                                                : ""}
+                                            {hotel?.minPricePerNight?.toLocaleString()} VND
                                         </p>
                                     </div>
 
                                     <div>
-                                        <p className="text-gray-500">Số điện thoại</p>
-                                        <p className="font-medium">{userInfo?.phone}</p>
+                                        <p className="text-gray-500">Giá sau giảm</p>
+                                        <p className="font-medium">
+                                            {hotel?.discountMinPricePerNight?.toLocaleString()} VND
+                                        </p>
                                     </div>
 
-                                    <div >
-                                        <p className="text-gray-500">Địa chỉ</p>
-                                        <p className="font-medium">{userInfo?.address}</p>
+                                    <div>
+                                        <p className="text-gray-500">Latitude</p>
+                                        <p className="font-medium">{hotel?.lat}</p>
+                                    </div>
+
+                                    <div>
+                                        <p className="text-gray-500">Longitude</p>
+                                        <p className="font-medium">{hotel?.lng}</p>
                                     </div>
 
                                 </div>

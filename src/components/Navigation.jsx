@@ -6,6 +6,7 @@ import {
     DesktopOutlined,
     HomeOutlined,
     HomeTwoTone,
+    LogoutOutlined,
     MailOutlined,
     MenuFoldOutlined,
     MenuUnfoldOutlined,
@@ -24,6 +25,7 @@ const Navigation = ({ collapsed: collapsedProp, onToggle }) => {
         { key: '3', icon: <UserOutlined />, label: 'Thông Tin Nhân Viên', path: "/me" },
         { key: '4', icon: <HomeOutlined />, label: 'Danh Sách Phòng', path: "/rooms" },
         { key: '5', icon: <BookOutlined />, label: 'Danh Sách Đặt Phòng', path: "/bookings" },
+        { key: '6', icon: <LogoutOutlined />, label: 'Đăng Xuất', path: "/login" },
     ];
 
 
@@ -38,6 +40,10 @@ const Navigation = ({ collapsed: collapsedProp, onToggle }) => {
     const handleMenuClick = (e) => {
         const item = items.find(item => item.key === e.key);
         if (item) {
+            if (item.key === '6') {
+                localStorage.removeItem("accessToken");
+                sessionStorage.removeItem("accessToken");
+            }
             navigate(item.path);
             setCurrent(e.key);
         }

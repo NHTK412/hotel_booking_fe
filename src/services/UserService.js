@@ -9,6 +9,16 @@ const getUserInfo = async () => {
     }
 }
 
+const getListHotel = async () => {
+    try {
+        const response = await axios.get("/accommodations/user/me");
+        return response;
+    } catch (error) {
+        throw error;
+    }
+}
+
 export {
-    getUserInfo
+    getUserInfo,
+    getListHotel
 }

@@ -5,6 +5,8 @@ import PrivateRoute from "./PrivateRoute";
 import PublicRoute from "./PublicRoute";
 import UserInfo from "../components/UserInfo";
 import UserPage from "../pages/UserPage";
+import { GlobalProvider } from "../context/GlobalContext";
+import NotFoundPage from "../pages/NotFoundPage";
 
 const router = createBrowserRouter([
     {
@@ -17,10 +19,13 @@ const router = createBrowserRouter([
     },
     {
         path: "/",
+        errorElement: <NotFoundPage></NotFoundPage>,
         element: (
-            <PrivateRoute>
-                <DashboardLayout></DashboardLayout>
-            </PrivateRoute>
+            <GlobalProvider>
+                <PrivateRoute>
+                    <DashboardLayout></DashboardLayout>
+                </PrivateRoute>
+            </GlobalProvider>
         ),
         children: [
             {
