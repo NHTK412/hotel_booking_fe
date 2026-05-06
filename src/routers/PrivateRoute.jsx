@@ -7,14 +7,6 @@ const PrivateRoute = ({ children }) => {
     const accessToken = localStorage.getItem("accessToken") || sessionStorage.getItem("accessToken");
     const { userInfo, isLoading } = useContext(globalContext);
 
-    // if (isLoading) {
-    //     return (
-    //         <>
-    //         {children}
-    //         </>
-    //     )
-    // }
-
     if (isLoading) {
         return (
             <div className="flex justify-center items-center h-screen">

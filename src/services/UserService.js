@@ -18,7 +18,17 @@ const getListHotel = async () => {
     }
 }
 
+const updateUserInfo = async (data) => {
+    try {
+        const response = await axios.put("/users/me", data);
+        return response;
+    } catch (error) {
+        throw error;
+    }
+}
+
 export {
     getUserInfo,
-    getListHotel
+    getListHotel,
+    updateUserInfo
 }
