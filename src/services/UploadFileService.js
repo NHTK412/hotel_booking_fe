@@ -8,13 +8,31 @@ const uploadFile = async (file) => {
 
         const response = await axios.post("/file-upload/cdn", formData);
 
-        
+
         return response;
     } catch (error) {
         throw error;
     }
 };
 
+const uploadFileMultiple = async (files) => {
+    try {
+        const formData = new FormData();
+        for (let i = 0; i < files.length; i++) {
+            formData.append("files", files[i]);
+        }
+
+        const response = await axios.post("/file-upload/cdn/multiple", formData);
+
+        return response;
+    }
+    catch (error) {
+        throw error;
+    }
+};
+
+
 export {
-    uploadFile
+    uploadFile,
+    uploadFileMultiple
 };

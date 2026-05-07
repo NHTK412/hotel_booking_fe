@@ -7,6 +7,7 @@ import UserInfo from "../components/UserInfo";
 import UserPage from "../pages/UserPage";
 import { GlobalProvider } from "../context/GlobalContext";
 import NotFoundPage from "../pages/NotFoundPage";
+import RoomTypeTable from "../components/RoomTypeTable";
 
 const router = createBrowserRouter([
     {
@@ -34,7 +35,7 @@ const router = createBrowserRouter([
             },
             {
                 path: "rooms",
-                element: <h2 className="text-2xl font-medium">Rooms List</h2>
+                element: <RoomTypeTable></RoomTypeTable>
             },
             {
                 path: "bookings",
