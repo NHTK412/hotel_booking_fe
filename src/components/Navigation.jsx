@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import {
     AppstoreOutlined,
     BookOutlined,
@@ -18,6 +18,7 @@ import { Button, Menu } from 'antd';
 import { useNavigate } from 'react-router-dom';
 
 const Navigation = ({ collapsed: collapsedProp, onToggle }) => {
+
 
     const items = [
         { key: '1', icon: <PieChartOutlined />, label: 'Trang Chủ', path: "/" },
@@ -43,6 +44,8 @@ const Navigation = ({ collapsed: collapsedProp, onToggle }) => {
             if (item.key === '6') {
                 localStorage.removeItem("accessToken");
                 sessionStorage.removeItem("accessToken");
+
+
             }
             navigate(item.path);
             setCurrent(e.key);

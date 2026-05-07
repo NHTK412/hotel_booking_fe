@@ -130,7 +130,7 @@ const RoomTypeDetail = ({ isShow, setIsShow, roomTypeSelected, isUpdating, setIs
             const newImageFiles = imagesPreview.filter(image => image.fileOriginal).map(image => image.fileOriginal);
             let imagePreviewUrls = [];
             if (newImageFiles.length > 0) {
-                responseUpload = await uploadFileMultiple(newImageFiles);
+                const responseUpload = await uploadFileMultiple(newImageFiles);
 
                 imagePreviewUrls = [
                     ...imagesPreview.filter(image => !image.fileOriginal).map(image => image.url),
@@ -167,7 +167,7 @@ const RoomTypeDetail = ({ isShow, setIsShow, roomTypeSelected, isUpdating, setIs
             })
 
         } catch (error) {
-            // console.error("Lỗi khi cập nhật loại phòng: ", error);
+            console.error("Lỗi khi cập nhật loại phòng: ", error);
             notification.error({
                 title: "Lỗi",
                 description: "Cập nhật loại phòng thất bại"
