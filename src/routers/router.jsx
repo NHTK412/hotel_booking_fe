@@ -7,7 +7,8 @@ import UserInfo from "../components/UserInfo";
 import UserPage from "../pages/UserPage";
 import { GlobalProvider } from "../context/GlobalContext";
 import NotFoundPage from "../pages/NotFoundPage";
-import RoomTypeTable from "../components/RoomTypeTable";
+// import RoomTypeTable from "../components/RoomTypeTable";
+import ListRoomTypePage from "../pages/ListRoomTypePage";
 
 const router = createBrowserRouter([
     {
@@ -35,7 +36,8 @@ const router = createBrowserRouter([
             },
             {
                 path: "rooms",
-                element: <RoomTypeTable></RoomTypeTable>
+                // element: <RoomTypeTable></RoomTypeTable>
+                element: <ListRoomTypePage></ListRoomTypePage>
             },
             {
                 path: "bookings",

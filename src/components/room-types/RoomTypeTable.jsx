@@ -1,31 +1,17 @@
 import { DeleteOutlined, EditOutlined, EyeOutlined, StarFilled, StarOutlined } from "@ant-design/icons"
 import { Button, Image, notification, Spin, Table, Tooltip } from "antd"
 import { use, useContext, useEffect, useState } from "react"
-import { getListRoomTypes } from "../services/RoomService"
-import { globalContext } from "../context/GlobalContext"
+import { getListRoomTypes } from "../../services/RoomService"
+import { globalContext } from "../../context/GlobalContext"
 import RoomTypeDetail from "./RoomTypeDetail"
 
-const RoomTypeTable = () => {
-
-
-
+const RoomTypeTable = ({ roomTypesPage, setRoomTypesPage, currentPage, setCurrentPage, currentPageSize, setCurrentPageSize, isLoadingRoomTypes, setIsLoadingRoomTypes, fetchRoomTypes }) => {
     const columns = [
         {
             title: "Mã loại phòng",
             dataIndex: "roomtypeId",
             key: "roomtypeId"
         },
-        // {
-        //     title: "Hình ảnh",
-        //     dataIndex: "image",
-        //     key: "image",
-        //     render: (_, record) => {
-        //         return (
-        //             <Image src={record.image} alt={record.name} width={200} height={150} style={{ objectFit: "cover" }}>
-        //             </Image>
-        //         )
-        //     }
-        // },
         {
             title: "Tên loại phòng",
             dataIndex: "name",
@@ -84,52 +70,11 @@ const RoomTypeTable = () => {
     ]
 
 
-    const [roomTypesPage, setRoomTypesPage] = useState({
-        content: [],
-        page: {
-            number: 0,
-            size: 0,
-            totalPages: 0
-        }
-    });
-    const [isLoadingRoomTypes, setIsLoadingRoomTypes] = useState(false);
-    const [currentPage, setCurrentPage] = useState(0);
-    const [currentPageSize, setCurrentPageSize] = useState(10);
     const [isShowRoomTypeDetail, setIsShowRoomTypeDetail] = useState(false);
     const [roomTypeSelected, setRoomTypeSelected] = useState(null);
-    const { hotelCurrent, listHotel } = useContext(globalContext);
-
-    const [isUpdating, setIsUpdating] = useState(false);
-
-    useEffect(() => {
-        fetchRoomTypes();
-    }, [currentPage, currentPageSize, hotelCurrent, isUpdating]);
-
-    const fetchRoomTypes = async () => {
-        try {
-            setIsLoadingRoomTypes(true);
-            const response = await getListRoomTypes({
-                accommodationId: listHotel[hotelCurrent].accommodationId,
-                page: currentPage,
-                size: currentPageSize
-            });
-            setRoomTypesPage(response.data);
-        }
-        catch (error) {
-            notification.error({
-                title: "Lỗi",
-                description: "Không thể tải danh sách loại phòng"
-            })
-        }
-        finally {
-            setIsLoadingRoomTypes(false);
-        }
-    }
-
 
     return (
         <>
-            <h2 className="text-2xl font-medium mb-5">Danh sách loại phòng</h2>
             <Spin spinning={isLoadingRoomTypes}>
                 <Table
                     dataSource={roomTypesPage.content}
@@ -151,10 +96,8 @@ const RoomTypeTable = () => {
                     isShow={isShowRoomTypeDetail}
                     setIsShow={setIsShowRoomTypeDetail}
                     roomTypeSelected={roomTypeSelected}
-                    isUpdating={isUpdating}
-                    setIsUpdating={setIsUpdating}
                     onUpdate={fetchRoomTypes}
-                    >
+                >
                 </RoomTypeDetail>
             </Spin >
         </>

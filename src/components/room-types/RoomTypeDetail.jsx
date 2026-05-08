@@ -1,24 +1,63 @@
-import { Button, Divider, Image, Modal, notification, Spin, Table, Tag, Row, Col, Card, Space, Tooltip, InputNumber, Rate, Checkbox, Upload } from "antd";
+import { Button, Divider, Image, Modal, notification, Spin, Table, Tag, Row, Col, Card, Space, Tooltip, InputNumber, Rate, Checkbox, Upload, Input, Form } from "antd";
 import { useContext, useEffect, useState } from "react";
-import { getListRoomByRoomTypeId, getRoomTypeDetail, updateRoomType } from "../services/RoomService";
+import { getListRoomByRoomTypeId, getRoomTypeDetail, updateRoomType } from "../../services/RoomService";
 import { StarOutlined, HomeOutlined, WifiOutlined, EnvironmentOutlined, StarFilled, EditOutlined, DeleteOutlined, SaveOutlined, UploadOutlined, LoadingOutlined, PlusOutlined } from "@ant-design/icons";
 import TextArea from "antd/es/input/TextArea";
-import { uploadFileMultiple } from "../services/UploadFileService";
-import { globalContext } from "../context/GlobalContext";
+import { uploadFile, uploadFileMultiple } from "../../services/UploadFileService";
+import { globalContext } from "../../context/GlobalContext";
 
-const RoomTypeDetail = ({ isShow, setIsShow, roomTypeSelected, isUpdating, setIsUpdating, onUpdate }) => {
+const RoomTypeDetail = ({ isShow, setIsShow, roomTypeSelected, onUpdate }) => {
+    const Amenityoptions = [
+        { label: "WiFi", value: "WIFI" },
+        { label: "Điều hòa", value: "AIR_CONDITIONING" },
+        { label: "TV", value: "TV" },
+        { label: "Mini bar", value: "MINI_BAR" },
+        { label: "Dịch vụ phòng", value: "ROOM_SERVICE" },
+        { label: "Hồ bơi", value: "SWIMMING_POOL" },
+        { label: "Phòng gym", value: "GYM" },
+        { label: "Spa", value: "SPA" },
+        { label: "Bãi đỗ xe", value: "PARKING" },
+        { label: "Bao gồm bữa sáng", value: "BREAKFAST_INCLUDED" }
+    ];
+
+    const columns = [
+        {
+            title: "Mã phòng",
+            dataIndex: "roomId",
+            key: "roomId",
+            width: "25%",
+            render: (text) => <span className="font-semibold text-gray-900">#{text}</span>
+        },
+        {
+            title: "Số phòng",
+            dataIndex: "roomNumber",
+            key: "roomNumber",
+            width: "25%",
+            render: (text) => <span className="font-medium text-gray-800">{text}</span>
+        },
+        {
+            title: "Trạng thái",
+            dataIndex: "isDeleted",
+            key: "status",
+            width: "25%",
+            render: (isDeleted) => (
+                <Tag color={isDeleted ? "red" : "green"} className="text-xs">
+                    {isDeleted ? "Đã xóa" : "Hoạt động"}
+                </Tag>
+            )
+        }
+    ];
 
     const [name, setName] = useState("");
     const [price, setPrice] = useState(0);
     const [discount, setDiscount] = useState(0);
     const [description, setDescription] = useState("");
-    const [image, setImage] = useState("");
+    const [image, setImage] = useState(null);
     const [imagesPreview, setImagesPreview] = useState([]);
     const [bedroom, setBedroom] = useState(0);
     const [capacity, setCapacity] = useState(0);
     const [amenities, setAmenities] = useState([]);
     const [isEditting, setIsEditting] = useState(false);
-
 
 
 
@@ -38,7 +77,12 @@ const RoomTypeDetail = ({ isShow, setIsShow, roomTypeSelected, isUpdating, setIs
             setPrice(response.data.price);
             setDiscount(response.data.discount);
             setDescription(response.data.description);
-            setImage(response.data.image);
+            setImage({
+                uid: -1,
+                name: response.data.image.split("/").pop(),
+                status: "done",
+                url: response.data.image
+            });
 
 
             const iP = response.data.imagesPreview.map((image, index) => {
@@ -75,57 +119,18 @@ const RoomTypeDetail = ({ isShow, setIsShow, roomTypeSelected, isUpdating, setIs
         }
     }, [isShow, roomTypeSelected]);
 
-    const Amenityoptions = [
-        { label: "WiFi", value: "WIFI" },
-        { label: "TV", value: "TV" },
-        { label: "Điều hòa", value: "AIR_CONDITIONING" },
-        { label: "Mini bar", value: "MINI_BAR" },
-        { label: "Bếp", value: "KITCHEN" },
-        { label: "Máy giặt", value: "WASHING_MACHINE" },
-        { label: "Bồn tắm", value: "BATHTUB" },
-        { label: "Vòi sen", value: "SHOWER" }
-    ];
 
 
-    const getAmenityLabel = (amenity) => {
-
-
-        return Amenityoptions.find(option => option.value === amenity)?.label || amenity;
-    };
-
-
-
-    const columns = [
-        {
-            title: "Mã phòng",
-            dataIndex: "roomId",
-            key: "roomId",
-            width: "25%",
-            render: (text) => <span className="font-semibold text-gray-900">#{text}</span>
-        },
-        {
-            title: "Số phòng",
-            dataIndex: "roomNumber",
-            key: "roomNumber",
-            width: "25%",
-            render: (text) => <span className="font-medium text-gray-800">{text}</span>
-        },
-        {
-            title: "Trạng thái",
-            dataIndex: "isDeleted",
-            key: "status",
-            width: "25%",
-            render: (isDeleted) => (
-                <Tag color={isDeleted ? "red" : "green"} className="text-xs">
-                    {isDeleted ? "Đã xóa" : "Hoạt động"}
-                </Tag>
-            )
-        }
-    ];
+    // const getAmenityLabel = (amenity) => {
+    //     return Amenityoptions.find(option => option.value === amenity)?.label || amenity;
+    // };
 
     const handleUpdateRoomType = async () => {
         try {
             setIsLoadingRoomTypes(true);
+
+            const imageUpdate = (image?.url !== roomTypeDetail.image) ? (await uploadFile(image.fileOriginal)).data.filePath : roomTypeDetail.image;
+
 
             const newImageFiles = imagesPreview.filter(image => image.fileOriginal).map(image => image.fileOriginal);
             let imagePreviewUrls = [];
@@ -142,13 +147,12 @@ const RoomTypeDetail = ({ isShow, setIsShow, roomTypeSelected, isUpdating, setIs
             }
 
 
-
             const data = {
                 name,
                 price,
                 discount,
                 description,
-                image,
+                image: imageUpdate,
                 imagesPreview: imagePreviewUrls,
                 bedroom,
                 capacity,
@@ -181,6 +185,62 @@ const RoomTypeDetail = ({ isShow, setIsShow, roomTypeSelected, isUpdating, setIs
         }
     }
 
+    const handleChangeImage = ({ file }) => {
+        const newImage = {
+            uid: file.uid,
+            name: file.name,
+            status: "done",
+            url: URL.createObjectURL(file),
+            fileOriginal: file
+        };
+        setImage(newImage);
+    }
+
+    const handelChangeImagesPreview = ({ file }) => {
+        if (file.status === "removed") {
+            const newListImagePreview = imagesPreview.filter(item => item.uid !== file.uid);
+            setImagesPreview(newListImagePreview);
+            return;
+        }
+        const newListImagePreview = [...imagesPreview, {
+            uid: file.uid,
+            name: file.name,
+            status: "done",
+            url: URL.createObjectURL(file),
+            fileOriginal: file
+        }];
+        setImagesPreview(newListImagePreview);
+    }
+
+    const handleClickButtonCancel = () => {
+        setIsEditting(false)
+        setName(roomTypeDetail.name);
+        setPrice(roomTypeDetail.price);
+        setDiscount(roomTypeDetail.discount);
+        setDescription(roomTypeDetail.description);
+        setBedroom(roomTypeDetail.bedroom);
+        setCapacity(roomTypeDetail.capacity);
+        setAmenities(roomTypeDetail.amenities || []);
+
+        setImage({
+            uid: -1,
+            name: roomTypeDetail.image.split("/").pop(),
+            status: "done",
+            url: roomTypeDetail.image
+        });
+
+        const iP = roomTypeDetail.imagesPreview.map((image, index) => {
+            return {
+                uid: index,
+                name: image.split("/").pop(),
+                status: "done",
+                url: image,
+            }
+        });
+        setImagesPreview(iP || []);
+
+    }
+
 
 
     return (
@@ -191,7 +251,6 @@ const RoomTypeDetail = ({ isShow, setIsShow, roomTypeSelected, isUpdating, setIs
                 onCancel={() => {
                     setIsEditting(false);
                     setIsShow(false)
-
                 }}
                 footer={null}
                 width={1000}
@@ -202,7 +261,19 @@ const RoomTypeDetail = ({ isShow, setIsShow, roomTypeSelected, isUpdating, setIs
                     {roomTypeDetail && (
                         <>
                             <div className="flex flex-row justify-between mr-5">
-                                <h2 className="text-2xl font-bold mb-4">{roomTypeDetail.name} - #{roomTypeDetail.roomtypeId}</h2>
+                                {
+                                    !isEditting ?
+                                        (
+                                            <h2 className="text-2xl font-bold mb-4">{roomTypeDetail.name} - #{roomTypeDetail.roomtypeId}</h2>
+                                        )
+                                        :
+                                        (
+                                            <div className="flex flex-row mb-4 space-x-2 items-center w-[60%]">
+                                                <p className="text-sm text-gray-500">Tên loại phòng: </p>
+                                                <Input value={name} onChange={(e) => setName(e.target.value)} style={{ width: "80%" }} />
+                                            </div>
+                                        )
+                                }
                                 {
                                     !isEditting ?
                                         (
@@ -214,28 +285,7 @@ const RoomTypeDetail = ({ isShow, setIsShow, roomTypeSelected, isUpdating, setIs
                                         :
                                         (
                                             <div className="flex flex gap-4">
-                                                <Button color="danger" variant="filled" onClick={() => {
-                                                    setIsEditting(false)
-                                                    setName(roomTypeDetail.name);
-                                                    setPrice(roomTypeDetail.price);
-                                                    setDiscount(roomTypeDetail.discount);
-                                                    setDescription(roomTypeDetail.description);
-                                                    setImage(roomTypeDetail.image);
-
-                                                    const iP = roomTypeDetail.imagesPreview.map((image, index) => {
-                                                        return {
-                                                            uid: index,
-                                                            name: image.split("/").pop(),
-                                                            status: "done",
-                                                            url: image,
-                                                        }
-                                                    });
-                                                    setImagesPreview(iP || []);
-
-                                                    setBedroom(roomTypeDetail.bedroom);
-                                                    setCapacity(roomTypeDetail.capacity);
-                                                    setAmenities(roomTypeDetail.amenities || []);
-                                                }}>
+                                                <Button color="danger" variant="filled" onClick={handleClickButtonCancel}>
                                                     <DeleteOutlined />
                                                     Hủy
                                                 </Button>
@@ -250,25 +300,44 @@ const RoomTypeDetail = ({ isShow, setIsShow, roomTypeSelected, isUpdating, setIs
                             <div className="flex flex gap-6">
                                 <div className="flex flex-col gap-4">
                                     <div>
-                                        <Image
-                                            src={roomTypeDetail.image}
-                                            alt={roomTypeDetail.name}
-                                            width={400}
-                                            height={300}
-                                            style={{
-                                                objectFit: "cover",
-                                                borderRadius: "12px"
-                                            }}
-                                        />
                                         {
-                                            isEditting && (
-                                                <Upload>
-                                                    <Button icon={<UploadOutlined />}>Click to Upload</Button>
-                                                </Upload>
-                                            )
+                                            !isEditting ?
+                                                (
+                                                    <Image
+                                                        src={roomTypeDetail.image}
+                                                        alt={roomTypeDetail.name}
+                                                        width={400}
+                                                        height={300}
+                                                        style={{
+                                                            objectFit: "cover",
+                                                            borderRadius: "12px"
+                                                        }}
+                                                        fallback="https://placehold.co/400x300?text=Image+Error"
+                                                    />
+                                                )
+                                                :
+                                                (
+                                                    <>
+                                                        <Image
+                                                            src={image?.url}
+                                                            alt={name || "Ảnh loại phòng"}
+                                                            width={400}
+                                                            height={300}
+                                                            style={{
+                                                                objectFit: "cover",
+                                                                borderRadius: "12px"
+                                                            }}
+                                                        />
+                                                        <Upload
+                                                            showUploadList={false}
+                                                            beforeUpload={() => false}
+                                                            onChange={handleChangeImage}>
+                                                            <Button icon={<UploadOutlined />}>Click to Upload</Button>
+                                                        </Upload>
+                                                    </>
+                                                )
                                         }
                                     </div>
-
                                     {
                                         !isEditting ?
                                             (
@@ -289,6 +358,7 @@ const RoomTypeDetail = ({ isShow, setIsShow, roomTypeSelected, isUpdating, setIs
                                                                         objectFit: "cover",
                                                                         borderRadius: "8px"
                                                                     }}
+                                                                    fallback="https://placehold.co/400x300?text=Image+Error"
                                                                 />
                                                             </div>
                                                         ))}
@@ -301,33 +371,15 @@ const RoomTypeDetail = ({ isShow, setIsShow, roomTypeSelected, isUpdating, setIs
                                                     beforeUpload={() => false}
                                                     listType="picture-card"
                                                     fileList={imagesPreview}
-                                                    onChange={({ file }) => {
-                                                        if (file.status === "removed") {
-                                                            const newListImagePreview = imagesPreview.filter(item => item.uid !== file.uid);
-                                                            setImagesPreview(newListImagePreview);
-                                                            return;
-                                                        }
-                                                        const newListImagePreview = [...imagesPreview, {
-                                                            uid: file.uid,
-                                                            name: file.name,
-                                                            status: "done",
-                                                            url: URL.createObjectURL(file),
-                                                            fileOriginal: file
-                                                        }];
-                                                        setImagesPreview(newListImagePreview);
-                                                    }}
+                                                    onChange={handelChangeImagesPreview}
                                                 >
                                                     <PlusOutlined />
                                                 </Upload>
                                             )
                                     }
                                 </div>
-
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-
-                                    {/* Left - Info */}
                                     <div className="space-y-4">
-
                                         <div>
                                             <p className="text-sm text-gray-500">Mô tả</p>
                                             {
@@ -344,9 +396,7 @@ const RoomTypeDetail = ({ isShow, setIsShow, roomTypeSelected, isUpdating, setIs
                                                         <TextArea rows={10} value={description} onChange={(e) => setDescription(e.target.value)} />
                                                     )
                                             }
-
                                         </div>
-
                                         <div>
                                             <p className="text-sm text-gray-500">Giá phòng</p>
                                             {
@@ -365,7 +415,6 @@ const RoomTypeDetail = ({ isShow, setIsShow, roomTypeSelected, isUpdating, setIs
                                                     )
                                             }
                                         </div>
-
                                         <div>
                                             <p className="text-sm text-gray-500">Khuyến mãi</p>
                                             {
@@ -383,19 +432,10 @@ const RoomTypeDetail = ({ isShow, setIsShow, roomTypeSelected, isUpdating, setIs
                                                     )
                                             }
                                         </div>
-
-
-
-
                                     </div>
-
-                                    {/* Right - Amenities */}
                                     <div>
                                         <div>
                                             <p className="text-sm text-gray-500">Số sao</p>
-                                            {/* <p className="text-yellow-500 font-medium">
-                                                {roomTypeDetail.star} <StarFilled />
-                                            </p> */}
                                             <Rate value={roomTypeDetail.star} disabled />
                                         </div>
                                         <div>
@@ -415,7 +455,6 @@ const RoomTypeDetail = ({ isShow, setIsShow, roomTypeSelected, isUpdating, setIs
                                                     )
                                             }
                                         </div>
-
                                         <div>
                                             <p className="text-sm text-gray-500">Số người tối đa</p>
                                             {
@@ -435,7 +474,6 @@ const RoomTypeDetail = ({ isShow, setIsShow, roomTypeSelected, isUpdating, setIs
                                         </div>
                                         <div>
                                             <p className="text-sm text-gray-500 mb-2">Tiện ích</p>
-
                                             {
                                                 !isEditting ?
                                                     (
@@ -459,9 +497,7 @@ const RoomTypeDetail = ({ isShow, setIsShow, roomTypeSelected, isUpdating, setIs
                                             }
                                         </div>
                                     </div>
-
                                 </div>
-
                             </div>
                         </>
                     )
