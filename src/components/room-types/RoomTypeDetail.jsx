@@ -5,6 +5,7 @@ import { StarOutlined, HomeOutlined, WifiOutlined, EnvironmentOutlined, StarFill
 import TextArea from "antd/es/input/TextArea";
 import { uploadFile, uploadFileMultiple } from "../../services/UploadFileService";
 import { globalContext } from "../../context/GlobalContext";
+import RoomTable from "./RoomTable";
 
 const RoomTypeDetail = ({ isShow, setIsShow, roomTypeSelected, onUpdate }) => {
     const Amenityoptions = [
@@ -20,33 +21,7 @@ const RoomTypeDetail = ({ isShow, setIsShow, roomTypeSelected, onUpdate }) => {
         { label: "Bao gồm bữa sáng", value: "BREAKFAST_INCLUDED" }
     ];
 
-    const columns = [
-        {
-            title: "Mã phòng",
-            dataIndex: "roomId",
-            key: "roomId",
-            width: "25%",
-            render: (text) => <span className="font-semibold text-gray-900">#{text}</span>
-        },
-        {
-            title: "Số phòng",
-            dataIndex: "roomNumber",
-            key: "roomNumber",
-            width: "25%",
-            render: (text) => <span className="font-medium text-gray-800">{text}</span>
-        },
-        {
-            title: "Trạng thái",
-            dataIndex: "isDeleted",
-            key: "status",
-            width: "25%",
-            render: (isDeleted) => (
-                <Tag color={isDeleted ? "red" : "green"} className="text-xs">
-                    {isDeleted ? "Đã xóa" : "Hoạt động"}
-                </Tag>
-            )
-        }
-    ];
+
 
     const [name, setName] = useState("");
     const [price, setPrice] = useState(0);
@@ -115,7 +90,6 @@ const RoomTypeDetail = ({ isShow, setIsShow, roomTypeSelected, onUpdate }) => {
     useEffect(() => {
         if (isShow && roomTypeSelected) {
             fetchRoomTypeDetail();
-
         }
     }, [isShow, roomTypeSelected]);
 
@@ -254,8 +228,13 @@ const RoomTypeDetail = ({ isShow, setIsShow, roomTypeSelected, onUpdate }) => {
                 }}
                 footer={null}
                 width={1000}
-                className="room-detail-modal"
                 bodyStyle={{ padding: "16px", borderRadius: "8px" }}
+                styles={{
+                    body: {
+                        maxHeight: "80vh",
+                        overflowY: "auto"
+                    },
+                }}
             >
                 <Spin spinning={isLoadingRoomTypes} description="Đang tải...">
                     {roomTypeDetail && (
@@ -498,6 +477,17 @@ const RoomTypeDetail = ({ isShow, setIsShow, roomTypeSelected, onUpdate }) => {
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                            <Divider />
+                            <div>
+
+                                <RoomTable
+                                    currentRoomType={roomTypeDetail}
+                                    listRoom={listRoom}
+                                    setListRoom={setListRoom}
+                                    fetchRoomTypeDetail={fetchRoomTypeDetail}
+                                >
+                                </RoomTable>
                             </div>
                         </>
                     )

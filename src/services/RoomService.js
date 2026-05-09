@@ -33,8 +33,8 @@ const getListRoomByRoomTypeId = async (roomTypeId) => {
 
 const updateRoomType = async (roomTypeId, data) => {
     try {
-        console.log("Gửi yêu cầu cập nhật loại phòng với data: ", data);
-        console.log("ID loại phòng cần cập nhật: ", roomTypeId);
+        // console.log("Gửi yêu cầu cập nhật loại phòng với data: ", data);
+        // console.log("ID loại phòng cần cập nhật: ", roomTypeId);
         const response = await axios.put(`/room-types/${roomTypeId}`, data);
         return response;
     }
@@ -43,9 +43,29 @@ const updateRoomType = async (roomTypeId, data) => {
     }
 };
 
+const createMultipleRooms = async (roomTypeId, data) => {
+    try {
+        const response = await axios.post(`/room-types/${roomTypeId}/rooms`, data);
+        return response;
+    } catch (error) {
+        throw error;
+    }
+}
+
+const updateStatusRoom = async (roomTypeId, roomId, status) => {
+    try {
+        const response = await axios.patch(`/room-types/${roomTypeId}/rooms/${roomId}?status=${status}`);
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};
+
 export {
     getListRoomTypes,
     getRoomTypeDetail,
     getListRoomByRoomTypeId,
-    updateRoomType
+    updateRoomType,
+    createMultipleRooms,
+    updateStatusRoom
 }
