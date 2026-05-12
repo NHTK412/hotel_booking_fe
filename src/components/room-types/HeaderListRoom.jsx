@@ -1,18 +1,35 @@
-import { Button } from "antd";
+import { Button, Modal } from "antd";
+import NewRoomType from "./NewRoomType";
+import { useState } from "react";
 
 const HeaderListRoom = ({
     fetchRoomTypes
 }) => {
+
+    const [isShowModalNewRoomType, setIsShowModalNewRoomType] = useState(false);
+
 
 
 
     return (
         <div className="flex flex-row justify-between">
             <h2 className="text-2xl font-medium mb-5">Danh sách loại phòng</h2>
-            <Button color="primary" variant="solid">
+            <Button color="primary" variant="solid" onClick={() => setIsShowModalNewRoomType(true)}>
                 Thêm loại phòng
             </Button>
-        </div>
+
+            <Modal
+                footer={null}
+                title="Thêm loại phòng mới"
+                open={isShowModalNewRoomType}
+                onCancel={() => setIsShowModalNewRoomType(false)}
+                onOk={() => {
+                    setIsShowModalNewRoomType(false);
+                }}
+            >
+                <NewRoomType fetchRoomTypes={fetchRoomTypes} setIsShowModalNewRoomType={setIsShowModalNewRoomType} />
+            </Modal>
+        </div >
     )
 }
 

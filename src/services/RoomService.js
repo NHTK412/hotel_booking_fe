@@ -61,11 +61,31 @@ const updateStatusRoom = async (roomTypeId, roomId, status) => {
     }
 };
 
+const createRoomType = async (data) => {
+    try {
+        const response = await axios.post(`/room-types`, data);
+        return response;
+    } catch (error) {
+        throw error;
+    }
+}
+
+const deleteRoomType = async (roomTypeId) => {
+    try {
+        const response = await axios.delete(`/room-types/${roomTypeId}`);
+        return response;
+    } catch (error) {
+        throw error;
+    }
+}
+
 export {
     getListRoomTypes,
     getRoomTypeDetail,
     getListRoomByRoomTypeId,
     updateRoomType,
     createMultipleRooms,
-    updateStatusRoom
+    updateStatusRoom,
+    createRoomType,
+    deleteRoomType
 }

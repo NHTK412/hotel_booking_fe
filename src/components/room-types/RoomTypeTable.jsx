@@ -1,7 +1,7 @@
 import { DeleteOutlined, EditOutlined, EyeOutlined, StarFilled, StarOutlined } from "@ant-design/icons"
-import { Button, Image, notification, Spin, Table, Tooltip } from "antd"
+import { Button, Image, notification, Popconfirm, Spin, Table, Tooltip } from "antd"
 import { use, useContext, useEffect, useState } from "react"
-import { getListRoomTypes } from "../../services/RoomService"
+import { deleteRoomType, getListRoomTypes } from "../../services/RoomService"
 import { globalContext } from "../../context/GlobalContext"
 import RoomTypeDetail from "./RoomTypeDetail"
 
@@ -59,9 +59,32 @@ const RoomTypeTable = ({ roomTypesPage, setRoomTypesPage, currentPage, setCurren
                             </Button>
                         </Tooltip>
                         <Tooltip title="Xóa">
-                            <Button color="danger" variant="filled">
-                                <DeleteOutlined />
-                            </Button>
+                            <Popconfirm
+                                title="Xác nhận xóa"
+                                description="Bạn có chắc chắn muốn xóa loại phòng này không?"
+                                onConfirm={async () => {
+                                    try {
+                                        const response = await deleteRoomType(record.roomtypeId);
+                                        notification.success({
+                                            title: "Thành công",
+                                            description: "Loại phòng đã được xóa thành công"
+                                        });
+                                        fetchRoomTypes();
+                                    } catch (error) {
+                                        console.error("Lỗi khi xóa loại phòng: ", error);
+                                        notification.error({
+                                            title: "Lỗi",
+                                            description: "Có lỗi xảy ra khi xóa loại phòng"
+                                        });
+                                    }
+                                }}
+                                okText="Xóa"
+                                cancelText="Hủy"
+                            >
+                                <Button color="danger" variant="filled">
+                                    <DeleteOutlined />
+                                </Button>
+                            </Popconfirm>
                         </Tooltip>
                     </div>
                 )

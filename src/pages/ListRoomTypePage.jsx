@@ -50,7 +50,9 @@ const ListRoomTypePage = () => {
 
     return (
         <>
-            <HeaderListRoom></HeaderListRoom>
+            <HeaderListRoom
+                fetchRoomTypes={fetchRoomTypes}>
+            </HeaderListRoom>
             <RoomTypeTable
                 roomTypesPage={roomTypesPage}
                 setRoomTypesPage={setRoomTypesPage}
