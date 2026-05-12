@@ -40,6 +40,14 @@ const NewRoomType = ({
         try {
             setIsLoading(true);
 
+            if (!name.trim() || price === 0) {
+                notification.error({
+                    title: "Lỗi",
+                    description: "Vui lòng nhập đầy đủ thông tin và giá phòng"
+                });
+                return;
+            }
+
             const uploadMainResponse = await uploadFile(mainImage);
             const mainPath = uploadMainResponse.data.filePath;
 
