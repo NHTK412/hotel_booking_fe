@@ -9,6 +9,7 @@ import { GlobalProvider } from "../context/GlobalContext";
 import NotFoundPage from "../pages/NotFoundPage";
 // import RoomTypeTable from "../components/RoomTypeTable";
 import ListRoomTypePage from "../pages/ListRoomTypePage";
+import BookingPage from "../pages/BookingPage";
 
 const router = createBrowserRouter([
     {
@@ -41,7 +42,8 @@ const router = createBrowserRouter([
             },
             {
                 path: "bookings",
-                element: <h2 className="text-2xl font-medium">Bookings List</h2>
+                // element: <h2 className="text-2xl font-medium">Bookings List</h2>
+                element: <BookingPage></BookingPage>
             },
             {
                 path: "me",
