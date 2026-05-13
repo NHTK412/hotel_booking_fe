@@ -10,6 +10,7 @@ import NotFoundPage from "../pages/NotFoundPage";
 // import RoomTypeTable from "../components/RoomTypeTable";
 import ListRoomTypePage from "../pages/ListRoomTypePage";
 import BookingPage from "../pages/BookingPage";
+import DashboardPage from "../pages/DashboardPage";
 
 const router = createBrowserRouter([
     {
@@ -33,7 +34,8 @@ const router = createBrowserRouter([
         children: [
             {
                 index: true,
-                element: <h2 className="text-2xl font-medium">Welcome to the Dashboard</h2>
+                // element: <h2 className="text-2xl font-medium">Welcome to the Dashboard</h2>
+                element: <DashboardPage></DashboardPage>
             },
             {
                 path: "rooms",

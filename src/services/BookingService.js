@@ -9,8 +9,19 @@ const getListBooking = async (accommodationId, page, size) => {
     }
 }
 
+const getBookingMonthReport = async (accommodationId, year) => {
+    try {
+        const response = await axios.get(`/bookings/host/${accommodationId}/monthly-report?year=${year}`);
+        return response;
+    } catch (error) {
+        throw error;
+    }
+
+}
+
 
 
 export {
-    getListBooking
+    getListBooking,
+    getBookingMonthReport
 };
