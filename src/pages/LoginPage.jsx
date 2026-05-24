@@ -16,7 +16,6 @@ const LoginPage = () => {
             if (response && response.data.accessToken) {
                 localStorage.removeItem('accessToken');
                 sessionStorage.removeItem('accessToken');
-
                 if (remember) {
                     localStorage.setItem('accessToken', response.data.accessToken);
                 }

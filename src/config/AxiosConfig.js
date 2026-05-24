@@ -29,15 +29,15 @@ instance.interceptors.response.use(
     (response) => {
         return response.data;
     }
-    ,
-    (error) => {
-        if (error.response && error.response.status === 401 && !whitelist.some((path) => error.config.url.includes(path))) {
-            localStorage.removeItem("accessToken");
-            sessionStorage.removeItem("accessToken");
-            window.location.href = "/login";
-        }
-        return Promise.reject(error);
-    }
+    // ,
+    // (error) => {
+    //     if (error.response && error.response.status === 401 && !whitelist.some((path) => error.config.url.includes(path))) {
+    //         localStorage.removeItem("accessToken");
+    //         sessionStorage.removeItem("accessToken");
+    //         window.location.href = "/login";
+    //     }
+    //     return Promise.reject(error);
+    // }
 );
 
 

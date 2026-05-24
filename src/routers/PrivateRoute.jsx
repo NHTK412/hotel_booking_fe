@@ -24,12 +24,11 @@ const PrivateRoute = ({ children }) => {
     }
 
     if (listHotel[hotelCurrent]?.staffRole === "ROLE_RECEPTIONIST") {
-        // Nếu là lễ tân thì không cho truy cập vào danh sách nhân viên
         if (window.location.pathname === "/staff") {
             return (
                 <AccessDeniedPage></AccessDeniedPage>
             );
-        }   
+        }
     }
 
 

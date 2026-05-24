@@ -26,9 +26,18 @@ const updateUserInfo = async (data) => {
         throw error;
     }
 }
+const getStaffByHotel = async (hotelId, page, size) => {
+    try {
+        const response = await axios.get(`/users/accommodation/${hotelId}?page=${page}&size=${size}`);
+        return response;
+    } catch (error) {
+        throw error;
+    }
+}
 
 export {
     getUserInfo,
     getListHotel,
-    updateUserInfo
+    updateUserInfo,
+    getStaffByHotel
 }

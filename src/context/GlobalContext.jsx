@@ -1,5 +1,5 @@
 import { notification } from "antd";
-import { createContext, useEffect, useState } from "react";
+import { createContext, use, useEffect, useState } from "react";
 import { getListHotel, getUserInfo } from "../services/userService";
 
 export const globalContext = createContext();
@@ -8,9 +8,17 @@ export const GlobalProvider = ({ children }) => {
     const [userInfo, setUserInfo] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [listHotel, setListHotel] = useState([]);
-    const [hotelCurrent, setHotelCurrent] = useState(0);
+    const [hotelCurrent, setHotelCurrent] = useState(() => {
+        const saved = localStorage.getItem("hotelCurrent");
+        return saved ? Number(saved) : 0;
+    });
 
     useEffect(() => {
+        localStorage.setItem("hotelCurrent", hotelCurrent);
+    }, [hotelCurrent]);
+
+    useEffect(() => {
+
         fetchUserInfo();
         fetchListHotel();
     }, []);

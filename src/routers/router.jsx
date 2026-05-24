@@ -11,6 +11,7 @@ import NotFoundPage from "../pages/NotFoundPage";
 import ListRoomTypePage from "../pages/ListRoomTypePage";
 import BookingPage from "../pages/BookingPage";
 import DashboardPage from "../pages/DashboardPage";
+import StaffPage from "../pages/StaffPage";
 
 const router = createBrowserRouter([
     {
@@ -50,12 +51,7 @@ const router = createBrowserRouter([
             },
             {
                 path: "staff",
-                element: (
-                    <div className="p-4">
-                        <h1 className="text-2xl font-bold mb-4">Danh Sách Nhân Viên</h1>
-                        {/* Nội dung danh sách nhân viên sẽ được hiển thị ở đây */}
-                    </div>
-                )
+                element: <StaffPage></StaffPage>
             }
         ]
     }
