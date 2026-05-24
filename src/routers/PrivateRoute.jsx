@@ -5,7 +5,7 @@ import { Spin } from "antd";
 
 const PrivateRoute = ({ children }) => {
     const accessToken = localStorage.getItem("accessToken") || sessionStorage.getItem("accessToken");
-    const { userInfo, isLoading } = useContext(globalContext);
+    const { userInfo, isLoading, listHotel, hotelCurrent } = useContext(globalContext);
 
     if (isLoading) {
         return (
@@ -21,6 +21,15 @@ const PrivateRoute = ({ children }) => {
         return (
             <AccessDeniedPage></AccessDeniedPage>
         );
+    }
+
+    if (listHotel[hotelCurrent]?.staffRole === "ROLE_RECEPTIONIST") {
+        // Nếu là lễ tân thì không cho truy cập vào danh sách nhân viên
+        if (window.location.pathname === "/staff") {
+            return (
+                <AccessDeniedPage></AccessDeniedPage>
+            );
+        }   
     }
 
 

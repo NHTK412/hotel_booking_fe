@@ -16,8 +16,11 @@ import {
 } from '@ant-design/icons';
 import { Button, Menu } from 'antd';
 import { useNavigate } from 'react-router-dom';
+import { globalContext } from '../context/GlobalContext';
 
 const Navigation = ({ collapsed: collapsedProp, onToggle }) => {
+
+    const { listHotel, hotelCurrent } = useContext(globalContext);
 
 
     const items = [
@@ -29,9 +32,18 @@ const Navigation = ({ collapsed: collapsedProp, onToggle }) => {
         { key: '6', icon: <LogoutOutlined />, label: 'Đăng Xuất', path: "/login" },
     ];
 
+    const itemsManager = [
+        { key: '1', icon: <PieChartOutlined />, label: 'Trang Chủ', path: "/" },
+        { key: '2', icon: <UserOutlined />, label: 'Thông Tin Nhân Viên', path: "/me" },
+        { key: '3', icon: <HomeOutlined />, label: 'Danh Sách Phòng', path: "/rooms" },
+        { key: '4', icon: <HomeOutlined />, label: 'Danh Sách Nhân Viên', path: "/staff" },
+        { key: '5', icon: <BookOutlined />, label: 'Danh Sách Đặt Phòng', path: "/bookings" },
+        { key: '6', icon: <LogoutOutlined />, label: 'Đăng Xuất', path: "/login" },
+    ]
+
 
     const path = window.location.pathname;
-    const currentPath = items.find(item => item.path === path);
+    const currentPath = (listHotel[hotelCurrent]?.staffRole === "ROLE_RECEPTIONIST") ? items.find(item => item.path === path) : itemsManager.find(item => item.path === path);
     const [current, setCurrent] = useState(currentPath ? currentPath.key : '1');
 
     const navigate = useNavigate();
@@ -39,7 +51,7 @@ const Navigation = ({ collapsed: collapsedProp, onToggle }) => {
 
 
     const handleMenuClick = (e) => {
-        const item = items.find(item => item.key === e.key);
+        const item = (listHotel[hotelCurrent]?.staffRole === "ROLE_RECEPTIONIST") ? items.find(item => item.key === e.key) : itemsManager.find(item => item.key === e.key);
         if (item) {
             if (item.key === '6') {
                 localStorage.removeItem("accessToken");
@@ -58,7 +70,7 @@ const Navigation = ({ collapsed: collapsedProp, onToggle }) => {
                 mode="inline"
                 theme="light"
                 inlineCollapsed={collapsedProp}
-                items={items}
+                items={(listHotel[hotelCurrent]?.staffRole === "ROLE_RECEPTIONIST") ? items : itemsManager}
                 selectedKeys={[current]}
                 onClick={handleMenuClick}
 

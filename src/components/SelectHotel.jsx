@@ -18,8 +18,6 @@ const SelectHotel = ({ hotelList, hotelCurrent, setHotelCurrent }) => {
                 open={isModalOpen}
                 footer={null}
                 onCancel={() => setIsModalOpen(false)}
-            // open={false}
-            // onOk={() => { }}
             >
                 {hotelList.map((hotel, index) => (
                     <div

@@ -34,27 +34,29 @@ const router = createBrowserRouter([
         children: [
             {
                 index: true,
-                // element: <h2 className="text-2xl font-medium">Welcome to the Dashboard</h2>
                 element: <DashboardPage></DashboardPage>
             },
             {
                 path: "rooms",
-                // element: <RoomTypeTable></RoomTypeTable>
                 element: <ListRoomTypePage></ListRoomTypePage>
             },
             {
                 path: "bookings",
-                // element: <h2 className="text-2xl font-medium">Bookings List</h2>
                 element: <BookingPage></BookingPage>
             },
             {
                 path: "me",
                 element: <UserPage></UserPage>
             },
-            // {
-            //     path: "hotels",
-            //     element: <h2 className="text-2xl font-medium">Hotels List</h2>
-            // }
+            {
+                path: "staff",
+                element: (
+                    <div className="p-4">
+                        <h1 className="text-2xl font-bold mb-4">Danh Sách Nhân Viên</h1>
+                        {/* Nội dung danh sách nhân viên sẽ được hiển thị ở đây */}
+                    </div>
+                )
+            }
         ]
     }
 ])

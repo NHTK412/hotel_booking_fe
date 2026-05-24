@@ -8,6 +8,8 @@ const HotelInfo = () => {
 
     const { listHotel, hotelCurrent, isLoading } = useContext(globalContext);
 
+    const isManager = listHotel[hotelCurrent]?.staffRole === "ROLE_MANAGER";
+
     const hotel = listHotel[hotelCurrent];
     // {
     //     {
@@ -35,12 +37,24 @@ const HotelInfo = () => {
                     ) :
                     (
                         <div className="space-y-6">
-                            <h2 className="text-xl font-semibold">
-                                Thông Tin Khách Sạn
-                                <span className="text-xl text-gray-500 ml-2">
-                                    #{hotel?.accommodationId}
-                                </span>
-                            </h2>
+                            <div className="flex flex-row justify-between">
+                                <h2 className="text-xl font-semibold">
+                                    Thông Tin Khách Sạn
+                                    <span className="text-xl text-gray-500 ml-2">
+                                        #{hotel?.accommodationId}
+                                    </span>
+                                </h2>
+                                {isManager && (
+                                    <Button
+                                        type="primary"
+                                        icon={<EditOutlined />}
+                                        className="ml-4"
+                                        onClick={() => notification.info({ message: "Chức năng đang được phát triển" })}
+                                    >
+                                        Chỉnh Sửa
+                                    </Button>
+                                )}
+                            </div>
 
                             <div className="flex gap-6">
                                 <div className="flex-shrink-0 mr-15">

@@ -11,19 +11,14 @@ const { Header, Sider, Content } = Layout;
 const DashboardLayout = ({ children }) => {
     const [collapsed, setCollapsed] = useState(false);
 
-    // const hotelList = [
-    //     { id: 1, name: "Khách sạn ABC" },
-    //     { id: 2, name: "Khách sạn XYZ" },
-    //     { id: 3, name: "Khách sạn DEF" },
-    // ]
 
     const { listHotel } = useContext(globalContext);
 
-    // const [currentHotel, setCurrentHotel] = useState(listHotel[0]);
 
-    const { userInfo, hotelCurrent, setHotelCurrent
-        // , 
-        // isLoading 
+    const {
+        userInfo,
+        hotelCurrent,
+        setHotelCurrent
     } = useContext(globalContext);
 
     return (
