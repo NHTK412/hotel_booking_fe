@@ -52,6 +52,8 @@ const StaffPage = () => {
                 setCurrentPage={setCurrentPage}
                 currentPageSize={currentPageSize}
                 setCurrentPageSize={setCurrentPageSize}
+                isDeleted={isDeleted}
+                setIsDeleted={setIsDeleted}
             ></StaffTable>
         </>
     );

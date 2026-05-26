@@ -5,7 +5,9 @@ const StaffTable = ({
     currentPage,
     setCurrentPage,
     currentPageSize,
-    setCurrentPageSize
+    setCurrentPageSize,
+    isDeleted,
+    setIsDeleted
 }) => {
 
     const roleStaff = [
@@ -60,31 +62,41 @@ const StaffTable = ({
             title: "Hành động",
             key: "action",
             render: (_, record) => {
-                return (
-                    <Flex gap="small">
-                        <div>
-                            <Popconfirm
-                                title="Xác nhận xóa"
-                                description="Bạn có chắc chắn muốn xóa nhân viên này không?"
-                                onConfirm={async () => {
-                                    try {
-                                    } catch (error) {
-                                    }
-                                }}
-                                okText="Xóa"
-                                cancelText="Hủy">
-                                <Button color="danger" variant="solid">
-                                    Xóa
-                                </Button>
-                            </Popconfirm>
+                if (!isDeleted) {
+                    return (
+                        <Flex gap="small">
+                            <div>
+                                <Popconfirm
+                                    title="Xác nhận xóa"
+                                    description="Bạn có chắc chắn muốn xóa nhân viên này không?"
+                                    onConfirm={async () => {
+                                        try {
+                                        } catch (error) {
+                                        }
+                                    }}
+                                    okText="Xóa"
+                                    cancelText="Hủy">
+                                    <Button color="danger" variant="solid">
+                                        Xóa
+                                    </Button>
+                                </Popconfirm>
 
-                        </div>
-                        <Button className="!bg-yellow-500 !border-yellow-500 !text-white">
-                            Sửa
+                            </div>
+                            <Button className="!bg-yellow-500 !border-yellow-500 !text-white">
+                                Sửa
+                            </Button>
+
+                        </Flex >
+                    )
+                }
+                else {
+                    return (
+                        <Button color="danger" variant="solid">
+                            Khôi phục
                         </Button>
+                    )
+                }
 
-                    </Flex >
-                )
             }
         }
     ];
