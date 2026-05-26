@@ -1,4 +1,7 @@
-import { Button, Flex, Popconfirm, Table, Tag } from "antd";
+import { Button, Flex, notification, Popconfirm, Spin, Table, Tag } from "antd";
+import { useContext, useState } from "react";
+import { globalContext } from "../../context/GlobalContext";
+import { deleteStaff, restoreStaff } from "../../services/UserService";
 
 const StaffTable = ({
     staffPage,
@@ -7,7 +10,8 @@ const StaffTable = ({
     currentPageSize,
     setCurrentPageSize,
     isDeleted,
-    setIsDeleted
+    setIsDeleted,
+    fetchStaffByHotel
 }) => {
 
     const roleStaff = [
@@ -22,6 +26,43 @@ const StaffTable = ({
             color: "blue"
         }
     ]
+
+    const [isLoading, setIsLoading] = useState(false);
+
+    const { listHotel, hotelCurrent } = useContext(globalContext);
+
+    const handleDeleteStaff = async (staffId) => {
+        try {
+            setIsLoading(true);
+            await deleteStaff(listHotel[hotelCurrent]?.accommodationId, staffId);
+            fetchStaffByHotel(listHotel[hotelCurrent]?.accommodationId, currentPage, currentPageSize, isDeleted);
+        } catch (error) {
+            notification.error({
+                title: "Lỗi",
+                description: "Xóa nhân viên thất bại"
+            })
+        }
+        finally {
+            setIsLoading(false);
+        }
+    }
+
+    const handleRestoreStaff = async (staffId) => {
+        try {
+            setIsLoading(true);
+            await restoreStaff(listHotel[hotelCurrent]?.accommodationId, staffId);
+            fetchStaffByHotel(listHotel[hotelCurrent]?.accommodationId, currentPage, currentPageSize, isDeleted);
+        } catch (error) {
+            notification.error({
+                title: "Lỗi",
+                description: "Khôi phục nhân viên thất bại"
+            })
+        }
+        finally {
+            setIsLoading(false);
+        }
+    }
+
 
 
     const columns = [
@@ -69,11 +110,7 @@ const StaffTable = ({
                                 <Popconfirm
                                     title="Xác nhận xóa"
                                     description="Bạn có chắc chắn muốn xóa nhân viên này không?"
-                                    onConfirm={async () => {
-                                        try {
-                                        } catch (error) {
-                                        }
-                                    }}
+                                    onConfirm={() => handleDeleteStaff(record.id)}
                                     okText="Xóa"
                                     cancelText="Hủy">
                                     <Button color="danger" variant="solid">
@@ -91,9 +128,17 @@ const StaffTable = ({
                 }
                 else {
                     return (
-                        <Button color="danger" variant="solid">
-                            Khôi phục
-                        </Button>
+                        <Popconfirm
+                            title="Xác nhận khôi phục"
+                            description="Bạn có chắc chắn muốn khôi phục nhân viên này không?"
+                            onConfirm={() => handleRestoreStaff(record.id)}
+                            okText="Khôi phục"
+                            cancelText="Hủy">
+                            <Button className="!bg-green-500 !border-green-500 !text-white">
+                                Khôi phục
+                            </Button>
+                        </Popconfirm >
+
                     )
                 }
 
@@ -103,21 +148,24 @@ const StaffTable = ({
 
     return (
         <>
-            <Table
-                columns={columns}
-                dataSource={staffPage.content}
-                pagination={{
-                    showSizeChanger: true,
-                    pageSizeOptions: ['1', '5', '10', '20', '50'],
-                    current: currentPage + 1,
-                    pageSize: currentPageSize,
-                    total: staffPage.page.totalPages,
-                    onChange: (page, pageSize) => {
-                        setCurrentPage(page - 1);
-                        setCurrentPageSize(pageSize);
-                    }
-                }}
-            />
+            <Spin spinning={isLoading}>
+                <Table
+                    rowKey="id"
+                    columns={columns}
+                    dataSource={staffPage.content}
+                    pagination={{
+                        showSizeChanger: true,
+                        pageSizeOptions: ['1', '5', '10', '20', '50'],
+                        current: currentPage + 1,
+                        pageSize: currentPageSize,
+                        total: staffPage.page.totalPages,
+                        onChange: (page, pageSize) => {
+                            setCurrentPage(page - 1);
+                            setCurrentPageSize(pageSize);
+                        }
+                    }}
+                />
+            </Spin>
         </>);
 }
 

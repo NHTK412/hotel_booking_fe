@@ -42,9 +42,9 @@ const StaffPage = () => {
             <StaffHeader
                 currentPage={currentPage}
                 currentPageSize={currentPageSize}
-                fetchStaffByHotel={fetchStaffByHotel}
                 isDeleted={isDeleted}
                 setIsDeleted={setIsDeleted}
+                fetchStaffByHotel={fetchStaffByHotel}
             ></StaffHeader>
             <StaffTable
                 staffPage={staffPage}
@@ -54,6 +54,7 @@ const StaffPage = () => {
                 setCurrentPageSize={setCurrentPageSize}
                 isDeleted={isDeleted}
                 setIsDeleted={setIsDeleted}
+                fetchStaffByHotel={fetchStaffByHotel}
             ></StaffTable>
         </>
     );
