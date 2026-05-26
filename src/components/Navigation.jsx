@@ -12,6 +12,7 @@ import {
     MenuUnfoldOutlined,
     PieChartOutlined,
     SolutionOutlined,
+    TeamOutlined,
     UserOutlined,
 } from '@ant-design/icons';
 import { Button, Menu } from 'antd';
@@ -36,7 +37,7 @@ const Navigation = ({ collapsed: collapsedProp, onToggle }) => {
         { key: '1', icon: <PieChartOutlined />, label: 'Trang Chủ', path: "/" },
         { key: '2', icon: <UserOutlined />, label: 'Thông Tin Nhân Viên', path: "/me" },
         { key: '3', icon: <HomeOutlined />, label: 'Danh Sách Phòng', path: "/rooms" },
-        { key: '4', icon: <HomeOutlined />, label: 'Danh Sách Nhân Viên', path: "/staff" },
+        { key: '4', icon: <TeamOutlined />, label: 'Danh Sách Nhân Viên', path: "/staff" },
         { key: '5', icon: <BookOutlined />, label: 'Danh Sách Đặt Phòng', path: "/bookings" },
         { key: '6', icon: <LogoutOutlined />, label: 'Đăng Xuất', path: "/login" },
     ]
@@ -55,6 +56,7 @@ const Navigation = ({ collapsed: collapsedProp, onToggle }) => {
         if (item) {
             if (item.key === '6') {
                 localStorage.removeItem("accessToken");
+                localStorage.removeItem("hotelCurrent");
                 sessionStorage.removeItem("accessToken");
 
 

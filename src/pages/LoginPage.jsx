@@ -40,7 +40,8 @@ const LoginPage = () => {
             console.error("Login error:", error);
             notification.error({
                 title: 'Đăng Nhập Thất Bại',
-                description: error.response?.data?.message || 'Đã xảy ra lỗi trong quá trình đăng nhập.',
+                // description: error.response?.data?.message || 'Đã xảy ra lỗi trong quá trình đăng nhập.',
+                description: 'Tên người dùng hoặc mật khẩu không đúng. Vui lòng thử lại.',
             })
         }
     }
@@ -69,17 +70,17 @@ const LoginPage = () => {
                         >
 
                             <Form.Item
-                                label="Username"
+                                label="Tên người dùng"
                                 name="username"
-                                rules={[{ required: true, message: 'Please input your username!' }]}
+                                rules={[{ required: true, message: 'Vui lòng nhập tên người dùng!' }]}
                             >
                                 <Input />
                             </Form.Item>
 
                             <Form.Item
-                                label="Password"
+                                label="Mật khẩu"
                                 name="password"
-                                rules={[{ required: true, message: 'Please input your password!' }]}
+                                rules={[{ required: true, message: 'Vui lòng nhập mật khẩu!' }]}
                             >
                                 <Input.Password />
                             </Form.Item>

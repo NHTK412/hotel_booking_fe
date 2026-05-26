@@ -26,9 +26,18 @@ const updateUserInfo = async (data) => {
         throw error;
     }
 }
-const getStaffByHotel = async (hotelId, page, size) => {
+const getStaffByHotel = async (hotelId, page, size, isDeleted) => {
     try {
-        const response = await axios.get(`/users/accommodation/${hotelId}?page=${page}&size=${size}`);
+        const response = await axios.get(`/users/accommodation/${hotelId}?page=${page}&size=${size}&isDeleted=${isDeleted}`);
+        return response;
+    } catch (error) {
+        throw error;
+    }
+}
+
+const createStaff = async (hotelId, data) => {
+    try {
+        const response = await axios.post(`/users/accommodation/${hotelId}`, data);
         return response;
     } catch (error) {
         throw error;
@@ -39,5 +48,6 @@ export {
     getUserInfo,
     getListHotel,
     updateUserInfo,
-    getStaffByHotel
+    getStaffByHotel,
+    createStaff
 }

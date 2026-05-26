@@ -2,7 +2,6 @@ import { Column } from "@ant-design/charts";
 import { notification } from "antd";
 import { useContext, useEffect, useState } from "react";
 import { getBookingMonthReport } from "../services/BookingService";
-import { globalConfig } from "antd/es/config-provider";
 import { globalContext } from "../context/GlobalContext";
 
 const DashboardPage = () => {
@@ -15,15 +14,22 @@ const DashboardPage = () => {
 
     const [data, setData] = useState([]);
 
+    const currentHotel = listHotel[hotelCurrent];
+
     useEffect(() => {
-        fetchData();
-    }, [hotelCurrent]);
+        if (!currentHotel?.accommodationId) {
+            setData([]);
+            return;
+        }
+
+        fetchData(currentHotel.accommodationId);
+    }, [currentHotel]);
 
 
 
-    const fetchData = async () => {
+    const fetchData = async (accommodationId) => {
         try {
-            const response = await getBookingMonthReport(listHotel[hotelCurrent].accommodationId, 2026);
+            const response = await getBookingMonthReport(accommodationId, 2026);
 
             const responseFormatted = response.data.map(item => ({
                 month: `Tháng ${item.month}`,
