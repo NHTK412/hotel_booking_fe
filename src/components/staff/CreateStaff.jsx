@@ -23,6 +23,7 @@ const CreateStaff = ({ fetchStaffByHotel, currentPageSize, currentPage, setIsSho
 
     const [isLoading, setIsLoading] = useState(false);
 
+
     const { listHotel, hotelCurrent } = useContext(globalContext);
 
     const handleNewStaff = async () => {
@@ -134,7 +135,7 @@ const CreateStaff = ({ fetchStaffByHotel, currentPageSize, currentPage, setIsSho
                     />
                 </div>
                 <Button color="primary" variant="solid" onClick={handleNewStaff}>
-                    Thêm nhân viên
+                    Tao nhân viên
                 </Button>
 
             </div>

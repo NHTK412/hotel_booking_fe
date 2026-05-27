@@ -55,7 +55,7 @@ const deleteStaff = async (hotelId, staffId) => {
 
 const restoreStaff = async (hotelId, staffId) => {
     try {
-        const response = await axios.put(`users/accommodation/${hotelId}/staff/${staffId}/restore`);
+        const response = await axios.patch(`users/accommodation/${hotelId}/staff/${staffId}/restore`);
         return response;
     } catch (error) {
         throw error;
@@ -71,6 +71,16 @@ const getUserById = async (userId) => {
     }
 }
 
+const addStaffByEmail = async (hotelId, data) => {
+    try {
+        const response = await axios.post(`/users/accommodation/${hotelId}/staff`, data);
+        return response;
+    }
+    catch (error) {
+        throw error;
+    }
+}
+
 export {
     getUserInfo,
     getListHotel,
@@ -79,5 +89,6 @@ export {
     createStaff,
     deleteStaff,
     restoreStaff,
-    getUserById
+    getUserById,
+    addStaffByEmail
 }
