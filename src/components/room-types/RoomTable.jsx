@@ -1,13 +1,17 @@
 import { DeleteOutlined } from "@ant-design/icons";
 import { Button, Input, Modal, notification, Spin, Table, Tag } from "antd";
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { createMultipleRooms, updateStatusRoom } from "../../services/RoomService";
+import { globalContext } from "../../context/GlobalContext";
 const RoomTable = ({
     currentRoomType,
     listRoom,
     setListRoom,
     fetchRoomTypeDetail
 }) => {
+
+    const { listHotel, hotelCurrent } = useContext(globalContext);
+
 
     const statusRoom = [
         {
@@ -56,39 +60,43 @@ const RoomTable = ({
                 );
             }
         },
-        {
-            title: "Hành động",
-            key: "action",
-            width: "25%",
-            render: (_, record) =>
-                <>
-                    {
-                        record.status === "ACTIVE" ? (
-                            <>
-                                <Button color="default" variant="filled" onClick={() => handleUpdateStatusRoom(record.roomId, "INACTIVE")}>
-                                    Bảo trì
-                                </Button>
-                                <Button color="danger" variant="filled" className="ml-2" onClick={() => handleUpdateStatusRoom(record.roomId, "DELETED")}>
-                                    Xóa
-                                </Button>
-                            </>)
-                            : record.status === "INACTIVE" ? (
-                                <>
-                                    <Button color="danger" variant="filled" onClick={() => handleUpdateStatusRoom(record.roomId, "DELETED")}>
-                                        Xóa
-                                    </Button>
-                                    <Button color="primary" variant="filled" className="ml-2" onClick={() => handleUpdateStatusRoom(record.roomId, "ACTIVE")}>
-                                        Khôi phục
-                                    </Button>
-                                </>
-                            ) : (
-                                <Button color="primary" variant="filled" onClick={() => handleUpdateStatusRoom(record.roomId, "ACTIVE")}>
-                                    Khôi phục
-                                </Button>
+        ...(listHotel[hotelCurrent]?.staffRole === 'ROLE_MANAGER' ? [
+            {
+                title: "Hành động",
+                key: "action",
+                width: "25%",
+                render: (_, record) =>
+                    <>
+                        {
+                            listHotel[hotelCurrent]?.staffRole === 'ROLE_MANAGER' && (
+                                record.status === "ACTIVE" ? (
+                                    <>
+                                        <Button color="default" variant="filled" onClick={() => handleUpdateStatusRoom(record.roomId, "INACTIVE")}>
+                                            Bảo trì
+                                        </Button>
+                                        <Button color="danger" variant="filled" className="ml-2" onClick={() => handleUpdateStatusRoom(record.roomId, "DELETED")}>
+                                            Xóa
+                                        </Button>
+                                    </>)
+                                    : record.status === "INACTIVE" ? (
+                                        <>
+                                            <Button color="danger" variant="filled" onClick={() => handleUpdateStatusRoom(record.roomId, "DELETED")}>
+                                                Xóa
+                                            </Button>
+                                            <Button color="primary" variant="filled" className="ml-2" onClick={() => handleUpdateStatusRoom(record.roomId, "ACTIVE")}>
+                                                Khôi phục
+                                            </Button>
+                                        </>
+                                    ) : (
+                                        <Button color="primary" variant="filled" onClick={() => handleUpdateStatusRoom(record.roomId, "ACTIVE")}>
+                                            Khôi phục
+                                        </Button>
+                                    )
                             )
-                    }
-                </>
-        }
+                        }
+                    </>
+            }
+        ] : [])
     ];
 
 
@@ -115,7 +123,6 @@ const RoomTable = ({
                     description: "Đã thêm phòng mới thành công.",
                 }
             )
-            // console.log("Thêm phòng mới thành công: ", reponse);
 
             setIsShowModalNewRoom(false);
             setInputs([""]);
@@ -176,9 +183,13 @@ const RoomTable = ({
             <Spin spinning={isLoadRoom} >
                 <div className="flex flex-row justify-between">
                     <h3 className="text-xl font-semibold mb-4">Danh sách phòng thuộc loại phòng</h3>
-                    <Button type="primary" onClick={() => setIsShowModalNewRoom(true)} loading={isLoadRoom}>
-                        Thêm phòng
-                    </Button>
+                    {
+                        listHotel[hotelCurrent]?.staffRole === 'ROLE_MANAGER' && (
+                            <Button type="primary" onClick={() => setIsShowModalNewRoom(true)} loading={isLoadRoom}>
+                                Thêm phòng
+                            </Button>
+                        )
+                    }
                 </div>
                 <Table
                     columns={columns}

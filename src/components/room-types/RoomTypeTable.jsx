@@ -6,6 +6,9 @@ import { globalContext } from "../../context/GlobalContext"
 import RoomTypeDetail from "./RoomTypeDetail"
 
 const RoomTypeTable = ({ roomTypesPage, setRoomTypesPage, currentPage, setCurrentPage, currentPageSize, setCurrentPageSize, isLoadingRoomTypes, setIsLoadingRoomTypes, fetchRoomTypes }) => {
+
+    const { listHotel, hotelCurrent } = useContext(globalContext);
+    s
     const columns = [
         {
             title: "Mã loại phòng",
@@ -58,34 +61,38 @@ const RoomTypeTable = ({ roomTypesPage, setRoomTypesPage, currentPage, setCurren
                                 <EyeOutlined />
                             </Button>
                         </Tooltip>
-                        <Tooltip title="Xóa">
-                            <Popconfirm
-                                title="Xác nhận xóa"
-                                description="Bạn có chắc chắn muốn xóa loại phòng này không?"
-                                onConfirm={async () => {
-                                    try {
-                                        const response = await deleteRoomType(record.roomtypeId);
-                                        notification.success({
-                                            title: "Thành công",
-                                            description: "Loại phòng đã được xóa thành công"
-                                        });
-                                        fetchRoomTypes();
-                                    } catch (error) {
-                                        console.error("Lỗi khi xóa loại phòng: ", error);
-                                        notification.error({
-                                            title: "Lỗi",
-                                            description: "Có lỗi xảy ra khi xóa loại phòng"
-                                        });
-                                    }
-                                }}
-                                okText="Xóa"
-                                cancelText="Hủy"
-                            >
-                                <Button color="danger" variant="filled">
-                                    <DeleteOutlined />
-                                </Button>
-                            </Popconfirm>
-                        </Tooltip>
+                        {
+                            listHotel[hotelCurrent]?.staffRole === 'ROLE_MANAGER' && (
+                                <Tooltip title="Xóa">
+                                    <Popconfirm
+                                        title="Xác nhận xóa"
+                                        description="Bạn có chắc chắn muốn xóa loại phòng này không?"
+                                        onConfirm={async () => {
+                                            try {
+                                                const response = await deleteRoomType(record.roomtypeId);
+                                                notification.success({
+                                                    title: "Thành công",
+                                                    description: "Loại phòng đã được xóa thành công"
+                                                });
+                                                fetchRoomTypes();
+                                            } catch (error) {
+                                                console.error("Lỗi khi xóa loại phòng: ", error);
+                                                notification.error({
+                                                    title: "Lỗi",
+                                                    description: "Có lỗi xảy ra khi xóa loại phòng"
+                                                });
+                                            }
+                                        }}
+                                        okText="Xóa"
+                                        cancelText="Hủy"
+                                    >
+                                        <Button color="danger" variant="filled">
+                                            <DeleteOutlined />
+                                        </Button>
+                                    </Popconfirm>
+                                </Tooltip>
+                            )
+                        }
                     </div>
                 )
             }

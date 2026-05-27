@@ -140,6 +140,8 @@ const UserInfo = () => {
                                                 width={200}
                                                 src={avatar ? URL.createObjectURL(avatar.originFileObj) : userInfo?.avatarUrl}
                                                 className="rounded-xl object-cover"
+                                                fallback="https://placehold.co/200x250?text=No+Image"
+
                                             />
                                         </>
                                     )
@@ -149,6 +151,7 @@ const UserInfo = () => {
                                                 width={200}
                                                 src={userInfo?.avatarUrl}
                                                 className="rounded-xl object-cover"
+                                                fallback="https://placehold.co/200x250?text=No+Image"
                                             />
                                         )
                                 }

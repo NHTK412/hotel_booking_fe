@@ -21,6 +21,7 @@ const RoomTypeDetail = ({ isShow, setIsShow, roomTypeSelected, onUpdate }) => {
         { label: "Bao gồm bữa sáng", value: "BREAKFAST_INCLUDED" }
     ];
 
+    const { listHotel, hotelCurrent } = useContext(globalContext);
 
 
     const [name, setName] = useState("");
@@ -94,17 +95,11 @@ const RoomTypeDetail = ({ isShow, setIsShow, roomTypeSelected, onUpdate }) => {
     }, [isShow, roomTypeSelected]);
 
 
-
-    // const getAmenityLabel = (amenity) => {
-    //     return Amenityoptions.find(option => option.value === amenity)?.label || amenity;
-    // };
-
     const handleUpdateRoomType = async () => {
         try {
             setIsLoadingRoomTypes(true);
 
             const imageUpdate = (image?.url !== roomTypeDetail.image) ? (await uploadFile(image.fileOriginal)).data.filePath : roomTypeDetail.image;
-
 
             const newImageFiles = imagesPreview.filter(image => image.fileOriginal).map(image => image.fileOriginal);
             let imagePreviewUrls = [];
@@ -254,26 +249,28 @@ const RoomTypeDetail = ({ isShow, setIsShow, roomTypeSelected, onUpdate }) => {
                                         )
                                 }
                                 {
-                                    !isEditting ?
-                                        (
-                                            <Button color="orange" variant="filled" onClick={() => { setIsEditting(true) }}>
-                                                <EditOutlined />
-                                                Chỉnh sửa
-                                            </Button>
-                                        )
-                                        :
-                                        (
-                                            <div className="flex flex gap-4">
-                                                <Button color="danger" variant="filled" onClick={handleClickButtonCancel}>
-                                                    <DeleteOutlined />
-                                                    Hủy
+                                    listHotel[hotelCurrent]?.staffRole === 'ROLE_MANAGER' && (
+                                        !isEditting ?
+                                            (
+                                                <Button color="orange" variant="filled" onClick={() => { setIsEditting(true) }}>
+                                                    <EditOutlined />
+                                                    Chỉnh sửa
                                                 </Button>
-                                                <Button color="primary" variant="filled" onClick={() => { handleUpdateRoomType() }}>
-                                                    <SaveOutlined />
-                                                    Lưu
-                                                </Button>
-                                            </div>
-                                        )
+                                            )
+                                            :
+                                            (
+                                                <div className="flex flex gap-4">
+                                                    <Button color="danger" variant="filled" onClick={handleClickButtonCancel}>
+                                                        <DeleteOutlined />
+                                                        Hủy
+                                                    </Button>
+                                                    <Button color="primary" variant="filled" onClick={() => { handleUpdateRoomType() }}>
+                                                        <SaveOutlined />
+                                                        Lưu
+                                                    </Button>
+                                                </div>
+                                            )
+                                    )
                                 }
                             </div>
                             <div className="flex gap-6">
