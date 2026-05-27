@@ -1,7 +1,9 @@
-import { Button, Flex, notification, Popconfirm, Spin, Table, Tag } from "antd";
+import { Button, Flex, Modal, notification, Popconfirm, Spin, Table, Tag, Tooltip } from "antd";
 import { useContext, useState } from "react";
 import { globalContext } from "../../context/GlobalContext";
 import { deleteStaff, restoreStaff } from "../../services/UserService";
+import { DeleteOutlined, EyeOutlined } from "@ant-design/icons";
+import StaffDetail from "./StaffDetail";
 
 const StaffTable = ({
     staffPage,
@@ -28,6 +30,8 @@ const StaffTable = ({
     ]
 
     const [isLoading, setIsLoading] = useState(false);
+    const [isShowStaffDetail, setIsShowStaffDetail] = useState(false);
+    const [currentStaffId, setCurrentStaffId] = useState(null);
 
     const { listHotel, hotelCurrent } = useContext(globalContext);
 
@@ -106,23 +110,26 @@ const StaffTable = ({
                 if (!isDeleted) {
                     return (
                         <Flex gap="small">
-                            <div>
+                            <Tooltip title="Xem chi tiết">
+                                <Button color="default" variant="filled" onClick={() => {
+                                    setIsShowStaffDetail(true);
+                                    setCurrentStaffId(record.id);
+                                }}>
+                                    <EyeOutlined />
+                                </Button>
+                            </Tooltip>
+                            <Tooltip title="Xóa">
                                 <Popconfirm
                                     title="Xác nhận xóa"
                                     description="Bạn có chắc chắn muốn xóa nhân viên này không?"
                                     onConfirm={() => handleDeleteStaff(record.id)}
                                     okText="Xóa"
                                     cancelText="Hủy">
-                                    <Button color="danger" variant="solid">
-                                        Xóa
+                                    <Button color="danger" variant="filled" >
+                                        <DeleteOutlined />
                                     </Button>
                                 </Popconfirm>
-
-                            </div>
-                            <Button className="!bg-yellow-500 !border-yellow-500 !text-white">
-                                Sửa
-                            </Button>
-
+                            </Tooltip>
                         </Flex >
                     )
                 }
@@ -165,6 +172,12 @@ const StaffTable = ({
                         }
                     }}
                 />
+                <StaffDetail
+                    isShowStaffDetail={isShowStaffDetail}
+                    setIsShowStaffDetail={setIsShowStaffDetail}
+                    staffId={currentStaffId}
+                >
+                </StaffDetail>
             </Spin>
         </>);
 }

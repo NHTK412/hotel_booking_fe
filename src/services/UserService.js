@@ -62,6 +62,15 @@ const restoreStaff = async (hotelId, staffId) => {
     }
 }
 
+const getUserById = async (userId) => {
+    try {
+        const response = await axios.get(`/users/${userId}`);
+        return response;
+    } catch (error) {
+        throw error;
+    }
+}
+
 export {
     getUserInfo,
     getListHotel,
@@ -69,5 +78,6 @@ export {
     getStaffByHotel,
     createStaff,
     deleteStaff,
-    restoreStaff
+    restoreStaff,
+    getUserById
 }

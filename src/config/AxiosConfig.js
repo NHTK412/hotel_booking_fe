@@ -33,7 +33,7 @@ instance.interceptors.response.use(
     // (error) => {
     //     if (error.response && error.response.status === 401 && !whitelist.some((path) => error.config.url.includes(path))) {
     //         localStorage.removeItem("accessToken");
-        // localStorage.removeItem("hotelCurrent");
+    //         localStorage.removeItem("hotelCurrent");
 
     //         sessionStorage.removeItem("accessToken");
     //         window.location.href = "/login";

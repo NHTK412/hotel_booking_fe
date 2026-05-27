@@ -256,7 +256,7 @@ const RoomTypeDetail = ({ isShow, setIsShow, roomTypeSelected, onUpdate }) => {
                                 {
                                     !isEditting ?
                                         (
-                                            <Button color="primary" variant="filled" onClick={() => { setIsEditting(true) }}>
+                                            <Button color="orange" variant="filled" onClick={() => { setIsEditting(true) }}>
                                                 <EditOutlined />
                                                 Chỉnh sửa
                                             </Button>
@@ -276,7 +276,7 @@ const RoomTypeDetail = ({ isShow, setIsShow, roomTypeSelected, onUpdate }) => {
                                         )
                                 }
                             </div>
-                            <div className="flex flex gap-6">
+                            <div className="flex gap-6">
                                 <div className="flex flex-col gap-4">
                                     <div>
                                         {
