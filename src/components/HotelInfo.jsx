@@ -1,6 +1,6 @@
 import { Avatar, Button, Image, Input, Modal, notification, Select, Spin, Upload } from "antd";
 import { useContext, useEffect, useState, useRef } from "react";
-import { getUserInfo } from "../services/userService";
+import { getUserInfo } from "../services/UserService";
 import { EditOutlined, UploadOutlined } from "@ant-design/icons";
 import { globalContext } from "../context/GlobalContext";
 import TextArea from "antd/es/input/TextArea";

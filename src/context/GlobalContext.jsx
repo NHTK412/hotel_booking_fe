@@ -1,6 +1,6 @@
 import { notification } from "antd";
 import { createContext, use, useEffect, useState } from "react";
-import { getListHotel, getUserInfo } from "../services/userService";
+import { getListHotel, getUserInfo } from "../services/UserService";
 
 export const globalContext = createContext();
 

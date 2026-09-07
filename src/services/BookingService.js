@@ -1,4 +1,4 @@
-import axios from "../config/axiosConfig";
+import axios from "../config/AxiosConfig";
 
 const getListBooking = async (accommodationId, page, size) => {
     try {

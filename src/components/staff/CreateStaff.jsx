@@ -3,7 +3,7 @@ import dayjs from "dayjs";
 import { useContext, useState } from "react";
 import { globalContext } from "../../context/GlobalContext";
 import { uploadFile } from "../../services/UploadFileService";
-import { createStaff } from "../../services/userService";
+import { createStaff } from "../../services/UserService";
 
 const CreateStaff = ({ fetchStaffByHotel, currentPageSize, currentPage, setIsShowCreateStaff, isDeleted, setIsDeleted }) => {
 

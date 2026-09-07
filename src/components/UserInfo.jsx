@@ -1,6 +1,6 @@
 import { Avatar, Button, DatePicker, Image, Input, notification, Select, Spin, Upload } from "antd";
 import { useContext, useEffect, useState } from "react";
-import { getUserInfo, updateUserInfo } from "../services/userService";
+import { getUserInfo, updateUserInfo } from "../services/UserService";
 import { EditOutlined, UploadOutlined, UserOutlined } from "@ant-design/icons";
 import { globalContext } from "../context/GlobalContext";
 import { uploadFile } from "../services/UploadFileService";

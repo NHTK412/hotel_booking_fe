@@ -2,7 +2,7 @@ import { useContext, useEffect, useState } from "react";
 import StaffHeader from "../components/staff/StaffHeader";
 import StaffTable from "../components/staff/StaffTable"
 import { globalContext } from "../context/GlobalContext";
-import { getStaffByHotel } from "../services/userService";
+import { getStaffByHotel } from "../services/UserService";
 
 const StaffPage = () => {
 
