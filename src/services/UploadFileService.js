@@ -14,12 +14,7 @@ const uploadFile = async (file) => {
     return response?.data || response;
 };
 
-/**
- * Tải nhiều file ảnh cùng lúc lên Cloudinary CDN
- * API: POST /api/file-upload/cdn/multiple
- * @param {FileList|File[]} files Danh sách tệp ảnh
- * @returns {Promise<Array<{ url: string, publicId?: string }>>}
- */
+
 const uploadFileMultiple = async (files) => {
     const formData = new FormData();
     for (let i = 0; i < files.length; i++) {

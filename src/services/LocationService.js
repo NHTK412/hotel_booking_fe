@@ -1,10 +1,5 @@
 import axios from "../config/AxiosConfig";
 
-/**
- * Lấy danh sách tên tất cả các Tỉnh / Thành phố
- * API: GET /api/locations/provinces
- * @returns {Promise<string[]>} Mảng tên các tỉnh thành (e.g. ['Hà Nội', 'Hồ Chí Minh', ...])
- */
 const getAllProvinceNames = async () => {
     try {
         const response = await axios.get("/locations/provinces");
@@ -15,13 +10,7 @@ const getAllProvinceNames = async () => {
     }
 };
 
-/**
- * Lấy danh sách Quận / Huyện theo Tỉnh / Thành phố
- * API: GET /api/locations/districts?province={province}
- * Lưu ý: Tham số query trên Backend là "province" (KHÔNG PHẢI "provinceName")
- * @param {string} province Tên tỉnh/thành phố
- * @returns {Promise<Array<{locationId: number, provinceName: string, districtName: string, latitude: number, longitude: number, searchVector: string}>>}
- */
+
 const getDistrictsByProvinceName = async (province) => {
     try {
         if (!province) return [];
@@ -33,13 +22,7 @@ const getDistrictsByProvinceName = async (province) => {
     }
 };
 
-/**
- * Tìm kiếm địa điểm theo từ khóa
- * API: GET /api/locations/search?keyword={kw}&page={p}&size={s}
- * @param {string} keyword
- * @param {number} page
- * @param {number} size
- */
+
 const searchLocations = async (keyword, page = 0, size = 10) => {
     try {
         const response = await axios.get(
@@ -52,11 +35,6 @@ const searchLocations = async (keyword, page = 0, size = 10) => {
     }
 };
 
-/**
- * Lấy thông tin chi tiết một địa điểm theo ID
- * API: GET /api/locations/{locationId}
- * @param {number} locationId
- */
 const getLocationById = async (locationId) => {
     try {
         const response = await axios.get(`/locations/${locationId}`);
@@ -67,10 +45,7 @@ const getLocationById = async (locationId) => {
     }
 };
 
-/**
- * Lấy toàn bộ danh sách địa điểm trong CSDL
- * API: GET /api/locations/all
- */
+
 const getAllLocations = async () => {
     try {
         const response = await axios.get("/locations/all");
@@ -81,12 +56,7 @@ const getAllLocations = async () => {
     }
 };
 
-/**
- * Tính toán mã GeoHash từ tọa độ Vĩ độ và Kinh độ
- * API: GET /api/locations/calculator?lat={lat}&lng={lng}
- * @param {number} lat Vĩ độ
- * @param {number} lng Kinh độ
- */
+
 const calculateGeoHash = async (lat, lng) => {
     try {
         const response = await axios.get(`/locations/calculator?lat=${lat}&lng=${lng}`);

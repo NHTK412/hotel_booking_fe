@@ -135,9 +135,20 @@ const AdminAccommodationsPage = () => {
         setIsModalOpen(true);
     };
 
-    const openEditModal = (record) => {
-        setSelectedAccommodation(record);
-        setIsModalOpen(true);
+    const openEditModal = async (record) => {
+        try {
+            setIsLoading(true);
+            const detailResponse = await getAccommodationById(record.accommodationId);
+            const detail = detailResponse?.data || detailResponse;
+            setSelectedAccommodation(detail || record);
+            setIsModalOpen(true);
+        } catch (error) {
+            console.error("Lỗi lấy chi tiết cơ sở lưu trú:", error);
+            setSelectedAccommodation(record);
+            setIsModalOpen(true);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     // Filter dữ liệu client theo tỉnh nếu chọn

@@ -15,6 +15,29 @@ const DefaultIcon = L.icon({
 });
 L.Marker.prototype.options.icon = DefaultIcon;
 
+// Component tự động sửa kích thước bản đồ khi Modal hiển thị xong hiệu ứng (invalidateSize)
+const MapResizer = () => {
+    const map = useMap();
+
+    useEffect(() => {
+        const t1 = setTimeout(() => map.invalidateSize(), 150);
+        const t2 = setTimeout(() => map.invalidateSize(), 400);
+        const t3 = setTimeout(() => map.invalidateSize(), 800);
+
+        const handleResize = () => map.invalidateSize();
+        window.addEventListener("resize", handleResize);
+
+        return () => {
+            clearTimeout(t1);
+            clearTimeout(t2);
+            clearTimeout(t3);
+            window.removeEventListener("resize", handleResize);
+        };
+    }, [map]);
+
+    return null;
+};
+
 // Component lắng nghe sự kiện click trên bản đồ để chọn tọa độ
 const MapClickHandler = ({ onLocationSelect }) => {
     useMapEvents({
@@ -30,15 +53,20 @@ const MapClickHandler = ({ onLocationSelect }) => {
     return null;
 };
 
-// Component tự động di chuyển camera bản đồ khi tọa độ thay đổi
+// Component tự động di chuyển camera bản đồ khi tọa độ thay đổi từ bên ngoài
 const MapCenterController = ({ lat, lng }) => {
     const map = useMap();
 
     useEffect(() => {
         if (lat && lng && !isNaN(lat) && !isNaN(lng)) {
-            map.flyTo([lat, lng], Math.max(map.getZoom(), 13), {
-                duration: 1.2,
-            });
+            const currentCenter = map.getCenter();
+            const dist = Math.abs(currentCenter.lat - lat) + Math.abs(currentCenter.lng - lng);
+            // Chỉ flyTo nếu tọa độ dịch chuyển đáng kể (tránh giật khi click trực tiếp)
+            if (dist > 0.0001) {
+                map.flyTo([lat, lng], Math.max(map.getZoom(), 14), {
+                    duration: 0.8,
+                });
+            }
         }
     }, [lat, lng, map]);
 
@@ -59,31 +87,34 @@ const LeafletLocationPicker = ({
         <div className="relative rounded-xl overflow-hidden border border-slate-200 shadow-xs">
             <MapContainer
                 center={[validLat, validLng]}
-                zoom={13}
-                scrollWheelZoom={false}
+                zoom={14}
+                scrollWheelZoom={true}
                 style={{ height, width: "100%", zIndex: 1 }}
             >
+                {/* Sử dụng Google Maps raster tiles: Không dính watermark bản quyền, tốc độ cực nhanh, tiếng Việt đầy đủ */}
                 <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution='&copy; Google Maps'
+                    url="https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
+                    maxZoom={20}
                 />
 
                 <Marker position={[validLat, validLng]}>
                     <Popup>
                         <div className="text-xs">
-                            <strong>{label}</strong>
+                            <strong className="text-blue-600">{label}</strong>
                             <br />
-                            Tọa độ: {validLat}, {validLng}
+                            Tọa độ: {validLat.toFixed(6)}, {validLng.toFixed(6)}
                         </div>
                     </Popup>
                 </Marker>
 
+                <MapResizer />
                 <MapClickHandler onLocationSelect={onChange} />
                 <MapCenterController lat={validLat} lng={validLng} />
             </MapContainer>
 
-            <div className="absolute bottom-2 left-2 z-10 bg-white/90 backdrop-blur-xs px-2 py-1 rounded text-[11px] text-slate-600 shadow-xs border border-slate-200 pointer-events-none">
-                💡 Click trên bản đồ để ghim tọa độ
+            <div className="absolute bottom-2 left-2 z-10 bg-white/95 backdrop-blur-xs px-2.5 py-1 rounded-md text-[11px] font-medium text-slate-700 shadow-sm border border-slate-200 pointer-events-none">
+                📍 Click trên bản đồ để chọn tọa độ
             </div>
         </div>
     );

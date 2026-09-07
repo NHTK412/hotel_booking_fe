@@ -12,6 +12,7 @@ import {
     Spin,
     Image,
     InputNumber,
+    Tag,
 } from "antd";
 import {
     UploadOutlined,
@@ -35,6 +36,9 @@ const accommodationTypeOptions = Object.values(ACCOMMODATION_TYPE_CONFIG).map((i
 
 const AccommodationModal = ({ open, onClose, onSuccess, initialData = null }) => {
     const [form] = Form.useForm();
+    const watchedProvince = Form.useWatch("province", form);
+    const watchedLocationId = Form.useWatch("locationId", form);
+
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [provinces, setProvinces] = useState([]);
@@ -49,26 +53,36 @@ const AccommodationModal = ({ open, onClose, onSuccess, initialData = null }) =>
         if (open) {
             loadProvinces();
             if (initialData) {
-                const lat = initialData.latitude ? Number(initialData.latitude) : 10.7769;
-                const lng = initialData.longitude ? Number(initialData.longitude) : 106.7009;
+                const lat = initialData.latitude
+                    ? Number(initialData.latitude)
+                    : initialData.lat
+                    ? Number(initialData.lat)
+                    : 10.7769;
+                const lng = initialData.longitude
+                    ? Number(initialData.longitude)
+                    : initialData.lng
+                    ? Number(initialData.lng)
+                    : 106.7009;
+                const locId = initialData.locationId ? Number(initialData.locationId) : undefined;
 
                 form.setFieldsValue({
-                    accommodationName: initialData.accommodationName,
-                    type: initialData.type,
-                    province: initialData.city,
-                    address: initialData.address,
-                    locationId: initialData.locationId,
-                    description: initialData.description,
+                    accommodationName: initialData.accommodationName || "",
+                    type: initialData.type || "HOTEL",
+                    province: initialData.city || undefined,
+                    address: initialData.address || "",
+                    locationId: locId,
+                    district: locId,
+                    description: initialData.description || "",
                     latitude: lat,
                     longitude: lng,
-                    image: initialData.image,
+                    image: initialData.image || "",
                 });
 
                 setImageUrl(initialData.image || "");
                 setCoords({ lat, lng });
 
                 if (initialData.city) {
-                    loadDistricts(initialData.city, initialData.locationId);
+                    loadDistricts(initialData.city, locId);
                 }
             } else {
                 form.resetFields();
@@ -87,7 +101,8 @@ const AccommodationModal = ({ open, onClose, onSuccess, initialData = null }) =>
     const loadProvinces = async () => {
         try {
             const data = await getAllProvinceNames();
-            setProvinces(Array.isArray(data) ? data : []);
+            const list = Array.isArray(data) ? data : data?.data || [];
+            setProvinces(list);
         } catch (error) {
             console.error("Lỗi lấy danh sách tỉnh thành:", error);
         }
@@ -97,14 +112,15 @@ const AccommodationModal = ({ open, onClose, onSuccess, initialData = null }) =>
         try {
             setIsLoadingDistricts(true);
             const data = await getDistrictsByProvinceName(provinceName);
-            const list = Array.isArray(data) ? data : [];
+            const list = Array.isArray(data) ? data : data?.data || [];
             setDistricts(list);
 
             if (selectedLocationId) {
-                const matched = list.find((d) => d.locationId === selectedLocationId);
-                if (matched) {
-                    form.setFieldsValue({ district: matched.districtName });
-                }
+                const numLocId = Number(selectedLocationId);
+                form.setFieldsValue({
+                    district: numLocId,
+                    locationId: numLocId,
+                });
             }
         } catch (error) {
             console.error("Lỗi tải danh sách quận huyện:", error);
@@ -118,20 +134,21 @@ const AccommodationModal = ({ open, onClose, onSuccess, initialData = null }) =>
         await loadDistricts(province);
     };
 
-    const handleDistrictChange = (districtName) => {
-        const found = districts.find((d) => d.districtName === districtName);
-        if (found) {
+    const handleDistrictChange = (locId) => {
+        const numLocId = Number(locId);
+        const found = districts.find((d) => d.locationId === numLocId);
+        form.setFieldsValue({
+            locationId: numLocId,
+            district: numLocId,
+        });
+
+        if (found?.latitude && found?.longitude) {
+            const newCoords = { lat: Number(found.latitude), lng: Number(found.longitude) };
+            setCoords(newCoords);
             form.setFieldsValue({
-                locationId: found.locationId,
+                latitude: newCoords.lat,
+                longitude: newCoords.lng,
             });
-            if (found.latitude && found.longitude) {
-                const newCoords = { lat: Number(found.latitude), lng: Number(found.longitude) };
-                setCoords(newCoords);
-                form.setFieldsValue({
-                    latitude: newCoords.lat,
-                    longitude: newCoords.lng,
-                });
-            }
         }
     };
 
@@ -147,7 +164,14 @@ const AccommodationModal = ({ open, onClose, onSuccess, initialData = null }) =>
         try {
             setIsUploading(true);
             const response = await uploadFile(file);
-            const url = response?.data?.url || response?.url;
+            // Backend trả về { success: true, data: { fileName: "...", filePath: "https://..." } }
+            const url =
+                response?.filePath ||
+                response?.data?.filePath ||
+                response?.url ||
+                response?.data?.url ||
+                (typeof response === "string" ? response : "");
+
             if (url) {
                 setImageUrl(url);
                 form.setFieldsValue({ image: url });
@@ -155,8 +179,15 @@ const AccommodationModal = ({ open, onClose, onSuccess, initialData = null }) =>
                     message: "Tải ảnh thành công",
                     description: "Ảnh bìa đã được lưu trữ trên Cloudinary CDN.",
                 });
+            } else {
+                console.warn("Không tìm thấy đường dẫn ảnh trong response:", response);
+                notification.warning({
+                    message: "Không tìm thấy URL ảnh",
+                    description: "Tệp đã tải lên nhưng phản hồi máy chủ không chứa filePath.",
+                });
             }
         } catch (error) {
+            console.error("Lỗi upload ảnh:", error);
             notification.error({
                 message: "Tải ảnh thất bại",
                 description: error?.message || "Không thể tải ảnh lên máy chủ.",
@@ -179,7 +210,7 @@ const AccommodationModal = ({ open, onClose, onSuccess, initialData = null }) =>
                 longitude: values.longitude ? Number(values.longitude) : coords.lng,
                 image: imageUrl || values.image || "",
                 type: values.type,
-                locationId: values.locationId,
+                locationId: Number(values.locationId || values.district),
             };
 
             if (isEditMode) {
@@ -274,7 +305,7 @@ const AccommodationModal = ({ open, onClose, onSuccess, initialData = null }) =>
                         </Row>
 
                         <Row gutter={12}>
-                            <Col span={14}>
+                            <Col span={24}>
                                 <Form.Item
                                     label={<span className="font-semibold text-slate-700">Quận / Huyện</span>}
                                     name="district"
@@ -282,33 +313,26 @@ const AccommodationModal = ({ open, onClose, onSuccess, initialData = null }) =>
                                 >
                                     <Select
                                         showSearch
-                                        placeholder={isLoadingDistricts ? "Đang tải..." : "Chọn Quận/Huyện"}
+                                        placeholder={isLoadingDistricts ? "Đang tải danh sách..." : "Chọn Quận/Huyện"}
                                         size="large"
-                                        disabled={!form.getFieldValue("province") || isLoadingDistricts}
+                                        disabled={!watchedProvince || isLoadingDistricts}
                                         onChange={handleDistrictChange}
+                                        filterOption={(input, option) =>
+                                            (option?.label ?? "").toLowerCase().includes(input.toLowerCase())
+                                        }
                                         options={districts.map((d) => ({
-                                            value: d.districtName,
+                                            value: d.locationId,
                                             label: d.districtName,
                                         }))}
                                     />
                                 </Form.Item>
                             </Col>
-
-                            <Col span={10}>
-                                <Form.Item
-                                    label={<span className="font-semibold text-slate-700">Mã Location ID</span>}
-                                    name="locationId"
-                                    rules={[{ required: true, message: "Vui lòng chọn địa điểm!" }]}
-                                >
-                                    <InputNumber
-                                        className="w-full"
-                                        size="large"
-                                        placeholder="Tự động"
-                                        disabled
-                                    />
-                                </Form.Item>
-                            </Col>
                         </Row>
+
+                        {/* Location ID được lưu ngầm tự động để gửi API */}
+                        <Form.Item name="locationId" hidden>
+                            <InputNumber />
+                        </Form.Item>
 
                         <Form.Item
                             label={<span className="font-semibold text-slate-700">Địa chỉ cụ thể</span>}
@@ -323,7 +347,7 @@ const AccommodationModal = ({ open, onClose, onSuccess, initialData = null }) =>
                             name="image"
                         >
                             <div className="flex items-start gap-4">
-                                <div className="w-28 h-20 rounded-lg border border-slate-200 bg-slate-50 flex items-center justify-center overflow-hidden shrink-0">
+                                <div className="w-28 h-20 rounded-lg border border-slate-200 bg-slate-50 flex items-center justify-center overflow-hidden shrink-0 shadow-xs">
                                     {isUploading ? (
                                         <Spin indicator={<LoadingOutlined style={{ fontSize: 24 }} spin />} />
                                     ) : imageUrl ? (
@@ -339,15 +363,30 @@ const AccommodationModal = ({ open, onClose, onSuccess, initialData = null }) =>
                                 </div>
 
                                 <div className="flex flex-col gap-2 flex-1">
-                                    <Upload
-                                        beforeUpload={handleUploadImage}
-                                        showUploadList={false}
-                                        accept="image/*"
-                                    >
-                                        <Button icon={<UploadOutlined />} loading={isUploading}>
-                                            Tải ảnh từ máy tính
-                                        </Button>
-                                    </Upload>
+                                    <div className="flex items-center gap-2">
+                                        <Upload
+                                            beforeUpload={handleUploadImage}
+                                            showUploadList={false}
+                                            accept="image/*"
+                                        >
+                                            <Button icon={<UploadOutlined />} loading={isUploading}>
+                                                {isUploading ? "Đang tải lên CDN..." : "Tải ảnh từ máy tính"}
+                                            </Button>
+                                        </Upload>
+                                        {imageUrl && (
+                                            <Button
+                                                type="text"
+                                                danger
+                                                size="small"
+                                                onClick={() => {
+                                                    setImageUrl("");
+                                                    form.setFieldsValue({ image: "" });
+                                                }}
+                                            >
+                                                Xóa ảnh
+                                            </Button>
+                                        )}
+                                    </div>
                                     <Input
                                         placeholder="Hoặc dán URL ảnh trực tiếp"
                                         value={imageUrl}
@@ -356,7 +395,13 @@ const AccommodationModal = ({ open, onClose, onSuccess, initialData = null }) =>
                                             form.setFieldsValue({ image: e.target.value });
                                         }}
                                         size="small"
+                                        hidden={true}
                                     />
+                                    {imageUrl && (
+                                        <span className="text-[11px] text-emerald-600 truncate max-w-sm">
+                                            ✓ Tải ảnh thành công lên Cloudinary CDN
+                                        </span>
+                                    )}
                                 </div>
                             </div>
                         </Form.Item>
