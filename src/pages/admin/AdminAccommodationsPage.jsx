@@ -25,6 +25,7 @@ import {
 } from "@ant-design/icons";
 import {
     getAllAccommodations,
+    getAccommodationById,
     deleteAccommodation,
     searchAccommodations,
 } from "../../services/AccommodationService";

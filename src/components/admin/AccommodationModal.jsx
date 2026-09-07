@@ -22,7 +22,11 @@ import {
     LoadingOutlined,
 } from "@ant-design/icons";
 import LeafletLocationPicker from "../common/LeafletLocationPicker";
-import { createAccommodation, updateAccommodation } from "../../services/AccommodationService";
+import {
+    createAccommodation,
+    updateAccommodation,
+    getAccommodationById,
+} from "../../services/AccommodationService";
 import { getAllProvinceNames, getDistrictsByProvinceName } from "../../services/LocationService";
 import { uploadFile } from "../../services/UploadFileService";
 import { ACCOMMODATION_TYPE_CONFIG } from "../../config/themeConfig";
@@ -37,10 +41,10 @@ const accommodationTypeOptions = Object.values(ACCOMMODATION_TYPE_CONFIG).map((i
 const AccommodationModal = ({ open, onClose, onSuccess, initialData = null }) => {
     const [form] = Form.useForm();
     const watchedProvince = Form.useWatch("province", form);
-    const watchedLocationId = Form.useWatch("locationId", form);
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
+    const [isLoadingDetail, setIsLoadingDetail] = useState(false);
     const [provinces, setProvinces] = useState([]);
     const [districts, setDistricts] = useState([]);
     const [isLoadingDistricts, setIsLoadingDistricts] = useState(false);
@@ -52,38 +56,8 @@ const AccommodationModal = ({ open, onClose, onSuccess, initialData = null }) =>
     useEffect(() => {
         if (open) {
             loadProvinces();
-            if (initialData) {
-                const lat = initialData.latitude
-                    ? Number(initialData.latitude)
-                    : initialData.lat
-                    ? Number(initialData.lat)
-                    : 10.7769;
-                const lng = initialData.longitude
-                    ? Number(initialData.longitude)
-                    : initialData.lng
-                    ? Number(initialData.lng)
-                    : 106.7009;
-                const locId = initialData.locationId ? Number(initialData.locationId) : undefined;
-
-                form.setFieldsValue({
-                    accommodationName: initialData.accommodationName || "",
-                    type: initialData.type || "HOTEL",
-                    province: initialData.city || undefined,
-                    address: initialData.address || "",
-                    locationId: locId,
-                    district: locId,
-                    description: initialData.description || "",
-                    latitude: lat,
-                    longitude: lng,
-                    image: initialData.image || "",
-                });
-
-                setImageUrl(initialData.image || "");
-                setCoords({ lat, lng });
-
-                if (initialData.city) {
-                    loadDistricts(initialData.city, locId);
-                }
+            if (initialData?.accommodationId) {
+                loadAccommodationDetail(initialData.accommodationId);
             } else {
                 form.resetFields();
                 form.setFieldsValue({
@@ -96,7 +70,65 @@ const AccommodationModal = ({ open, onClose, onSuccess, initialData = null }) =>
                 setCoords({ lat: 10.7769, lng: 106.7009 });
             }
         }
-    }, [open, initialData]);
+    }, [open, initialData?.accommodationId]);
+
+    const loadAccommodationDetail = async (id) => {
+        try {
+            setIsLoadingDetail(true);
+            const res = await getAccommodationById(id);
+            const data = res?.data || res;
+
+            if (data) {
+                const lat = data.latitude
+                    ? Number(data.latitude)
+                    : data.lat
+                    ? Number(data.lat)
+                    : 10.7769;
+                const lng = data.longitude
+                    ? Number(data.longitude)
+                    : data.lng
+                    ? Number(data.lng)
+                    : 106.7009;
+                const locId = data.locationId ? Number(data.locationId) : undefined;
+
+                // Match enum value (HOTEL, RESORT...) hoặc label tiếng Việt (Khách sạn...)
+                const matchedType =
+                    Object.values(ACCOMMODATION_TYPE_CONFIG).find(
+                        (t) => t.value === data.type || t.label === data.type
+                    )?.value ||
+                    data.type ||
+                    "HOTEL";
+
+                form.setFieldsValue({
+                    accommodationName: data.accommodationName || "",
+                    type: matchedType,
+                    province: data.city || undefined,
+                    address: data.address || "",
+                    locationId: locId,
+                    district: locId,
+                    description: data.description || "",
+                    latitude: lat,
+                    longitude: lng,
+                    image: data.image || "",
+                });
+
+                setImageUrl(data.image || "");
+                setCoords({ lat, lng });
+
+                if (data.city) {
+                    await loadDistricts(data.city, locId);
+                }
+            }
+        } catch (error) {
+            console.error("Lỗi tải chi tiết cơ sở lưu trú:", error);
+            notification.error({
+                message: "Không thể lấy thông tin chi tiết",
+                description: error?.message || "Đã xảy ra lỗi khi tải dữ liệu cơ sở lưu trú.",
+            });
+        } finally {
+            setIsLoadingDetail(false);
+        }
+    };
 
     const loadProvinces = async () => {
         try {
@@ -258,9 +290,10 @@ const AccommodationModal = ({ open, onClose, onSuccess, initialData = null }) =>
             destroyOnClose
             centered
         >
-            <Form
-                form={form}
-                layout="vertical"
+            <Spin spinning={isLoadingDetail}>
+                <Form
+                    form={form}
+                    layout="vertical"
                 onFinish={handleSubmit}
                 requiredMark="optional"
                 className="mt-4"
@@ -476,7 +509,8 @@ const AccommodationModal = ({ open, onClose, onSuccess, initialData = null }) =>
                         {isEditMode ? "Lưu Cập Nhật" : "Tạo Cơ Sở Lưu Trú"}
                     </Button>
                 </div>
-            </Form>
+                </Form>
+            </Spin>
         </Modal>
     );
 };
