@@ -1,84 +1,67 @@
-import React, { useContext, useState } from 'react';
+import { useContext } from 'react';
 import {
-    AppstoreOutlined,
     BookOutlined,
-    ContainerOutlined,
-    DesktopOutlined,
     HomeOutlined,
-    HomeTwoTone,
     LogoutOutlined,
-    MailOutlined,
-    MenuFoldOutlined,
-    MenuUnfoldOutlined,
     PieChartOutlined,
-    SolutionOutlined,
     TeamOutlined,
     UserOutlined,
 } from '@ant-design/icons';
-import { Button, Menu } from 'antd';
-import { useNavigate } from 'react-router-dom';
+import { Menu } from 'antd';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { globalContext } from '../context/GlobalContext';
 
-const Navigation = ({ collapsed: collapsedProp, onToggle }) => {
+const Navigation = ({ collapsed }) => {
+    const { listHotel, hotelCurrent, handleLogout } = useContext(globalContext);
+    const navigate = useNavigate();
+    const location = useLocation();
 
-    const { listHotel, hotelCurrent } = useContext(globalContext);
+    const currentStaffRole = listHotel[hotelCurrent]?.staffRole;
+    const isReceptionist = currentStaffRole === "ROLE_RECEPTIONIST";
 
-
-    const items = [
-        { key: '1', icon: <PieChartOutlined />, label: 'Trang Chủ', path: "/" },
-        // { key: '2', icon: <SolutionOutlined />, label: 'Thông Tin Khách Sạn', path: "/hotels" },
-        { key: '3', icon: <UserOutlined />, label: 'Thông Tin Nhân Viên', path: "/me" },
-        { key: '4', icon: <HomeOutlined />, label: 'Danh Sách Phòng', path: "/rooms" },
-        { key: '5', icon: <BookOutlined />, label: 'Danh Sách Đặt Phòng', path: "/bookings" },
-        { key: '6', icon: <LogoutOutlined />, label: 'Đăng Xuất', path: "/login" },
+    // Menu cho Lễ tân
+    const itemsReceptionist = [
+        { key: '/host/dashboard', icon: <PieChartOutlined />, label: 'Bảng Điều Khiển' },
+        { key: '/host/rooms', icon: <HomeOutlined />, label: 'Quản Lý Phòng' },
+        { key: '/host/bookings', icon: <BookOutlined />, label: 'Đơn Đặt Phòng' },
+        { key: '/host/profile', icon: <UserOutlined />, label: 'Hồ Sơ Cá Nhân' },
+        { type: 'divider' },
+        { key: 'logout', icon: <LogoutOutlined />, label: 'Đăng Xuất', danger: true },
     ];
 
-    const itemsManager = [
-        { key: '1', icon: <PieChartOutlined />, label: 'Trang Chủ', path: "/" },
-        { key: '2', icon: <UserOutlined />, label: 'Thông Tin Nhân Viên', path: "/me" },
-        { key: '3', icon: <HomeOutlined />, label: 'Danh Sách Phòng', path: "/rooms" },
-        { key: '4', icon: <TeamOutlined />, label: 'Danh Sách Nhân Viên', path: "/staff" },
-        { key: '5', icon: <BookOutlined />, label: 'Danh Sách Đặt Phòng', path: "/bookings" },
-        { key: '6', icon: <LogoutOutlined />, label: 'Đăng Xuất', path: "/login" },
-    ]
+    // Menu cho Chủ khách sạn / Quản lý (đầy đủ quyền quản lý nhân sự)
+    const itemsHost = [
+        { key: '/host/dashboard', icon: <PieChartOutlined />, label: 'Bảng Điều Khiển' },
+        { key: '/host/rooms', icon: <HomeOutlined />, label: 'Quản Lý Phòng' },
+        { key: '/host/bookings', icon: <BookOutlined />, label: 'Đơn Đặt Phòng' },
+        { key: '/host/staff', icon: <TeamOutlined />, label: 'Quản Lý Nhân Sự' },
+        { key: '/host/profile', icon: <UserOutlined />, label: 'Hồ Sơ Cá Nhân' },
+        { type: 'divider' },
+        { key: 'logout', icon: <LogoutOutlined />, label: 'Đăng Xuất', danger: true },
+    ];
 
-
-    const path = window.location.pathname;
-    const currentPath = (listHotel[hotelCurrent]?.staffRole === "ROLE_RECEPTIONIST") ? items.find(item => item.path === path) : itemsManager.find(item => item.path === path);
-    const [current, setCurrent] = useState(currentPath ? currentPath.key : '1');
-
-    const navigate = useNavigate();
-
-
+    const menuItems = isReceptionist ? itemsReceptionist : itemsHost;
 
     const handleMenuClick = (e) => {
-        const item = (listHotel[hotelCurrent]?.staffRole === "ROLE_RECEPTIONIST") ? items.find(item => item.key === e.key) : itemsManager.find(item => item.key === e.key);
-        if (item) {
-            if (item.key === '6') {
-                localStorage.removeItem("accessToken");
-                localStorage.removeItem("hotelCurrent");
-                sessionStorage.removeItem("accessToken");
-
-
-            }
-            navigate(item.path);
-            setCurrent(e.key);
+        if (e.key === 'logout') {
+            handleLogout();
+        } else {
+            navigate(e.key);
         }
     };
 
     return (
-        <div className="px-2">
+        <div className="px-2 py-2">
             <Menu
                 mode="inline"
                 theme="light"
-                inlineCollapsed={collapsedProp}
-                items={(listHotel[hotelCurrent]?.staffRole === "ROLE_RECEPTIONIST") ? items : itemsManager}
-                selectedKeys={[current]}
+                inlineCollapsed={collapsed}
+                items={menuItems}
+                selectedKeys={[location.pathname]}
                 onClick={handleMenuClick}
-
             />
         </div>
     );
-}
+};
 
 export default Navigation;

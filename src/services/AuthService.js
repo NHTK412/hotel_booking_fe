@@ -1,19 +1,32 @@
-import axios from "../config/AxiosConfig";
+import axios, { clearAuthData } from "../config/AxiosConfig";
 
 const login = async (email, password) => {
-    try {
-        const data = {
-            email,
-            password
-        };
-        const response = await axios.post("/auth/login", data);
-        return response;
-    } catch (error) {
-        throw error;
-    }
-}
+    const data = {
+        email,
+        password,
+    };
+    return await axios.post("/auth/login", data);
+};
 
+const refreshToken = async (token) => {
+    return await axios.post("/auth/refresh-token", { refreshToken: token });
+};
+
+const logout = async () => {
+    try {
+        await axios.post("/auth/logout");
+    } finally {
+        clearAuthData();
+    }
+};
+
+const resetPassword = async (data) => {
+    return await axios.post("/auth/reset-password", data);
+};
 
 export {
-    login
-}
+    login,
+    refreshToken,
+    logout,
+    resetPassword
+};
