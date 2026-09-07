@@ -4,6 +4,7 @@ import { globalContext } from "../../context/GlobalContext";
 import { deleteStaff, restoreStaff } from "../../services/UserService";
 import { DeleteOutlined, EyeOutlined } from "@ant-design/icons";
 import StaffDetail from "./StaffDetail";
+import { USER_ROLE_CONFIG } from "../../config/themeConfig";
 
 const StaffTable = ({
     staffPage,
@@ -15,19 +16,6 @@ const StaffTable = ({
     setIsDeleted,
     fetchStaffByHotel
 }) => {
-
-    const roleStaff = [
-        {
-            value: "ROLE_RECEPTIONIST",
-            label: "Nhân viên",
-            color: "green"
-        },
-        {
-            value: "ROLE_MANAGER",
-            label: "Quản lý",
-            color: "blue"
-        }
-    ]
 
     const [isLoading, setIsLoading] = useState(false);
     const [isShowStaffDetail, setIsShowStaffDetail] = useState(false);
@@ -95,12 +83,12 @@ const StaffTable = ({
             dataIndex: "roleStaff",
             key: "roleStaff",
             render: (role) => {
-                const roleOption = roleStaff.find((r) => r.value === role);
+                const roleConfig = USER_ROLE_CONFIG[role];
                 return (
-                    <Tag color={roleOption?.color}>
-                        {roleOption?.label}
+                    <Tag color={roleConfig?.tagColor || "default"}>
+                        {roleConfig?.label || role}
                     </Tag>
-                )
+                );
             }
         },
         {

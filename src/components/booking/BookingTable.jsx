@@ -1,5 +1,5 @@
 import { Button, Table, Tag } from "antd";
-import { act } from "react";
+import { BOOKING_STATUS_CONFIG } from "../../config/themeConfig";
 
 const BookingTable = ({
     bookingPage,
@@ -8,33 +8,6 @@ const BookingTable = ({
     currentPageSize,
     setCurrentPageSize
 }) => {
-    const statusEnum = [
-        {
-            value: "WAITING_FOR_PAYMENT",
-            label: "Chờ thanh toán",
-            color: "orange"
-        },
-        {
-            value: "PENDING",
-            label: "Chờ nhận phòng",
-            color: "blue"
-        },
-        {
-            value: "CHECKED_IN",
-            label: "Đã nhận phòng",
-            color: "green"
-        },
-        {
-            value: "CHECKED_OUT",
-            label: "Đã trả phòng",
-            color: "gray"
-        },
-        {
-            value: "CANCELED",
-            label: "Đã hủy",
-            color: "red"
-        }
-    ]
 
     const renderButtonAction = (record) => {
         switch (record.status) {
@@ -100,7 +73,12 @@ const BookingTable = ({
             dataIndex: "status",
             key: "status",
             render: (status) => {
-                return <Tag color={statusEnum.find(s => s.value === status)?.color}>{statusEnum.find(s => s.value === status)?.label}</Tag>
+                const config = BOOKING_STATUS_CONFIG[status];
+                return (
+                    <Tag color={config?.tagColor || "default"}>
+                        {config?.label || status}
+                    </Tag>
+                );
             }
         },
         {
