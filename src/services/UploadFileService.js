@@ -1,11 +1,6 @@
 import axios from "../config/AxiosConfig";
 
-/**
- * Tải một file ảnh lên Cloudinary CDN
- * API: POST /api/file-upload/cdn
- * @param {File} file Tệp hình ảnh
- * @returns {Promise<{ url: string, publicId?: string }>}
- */
+
 const uploadFile = async (file) => {
     const formData = new FormData();
     formData.append("file", file);
