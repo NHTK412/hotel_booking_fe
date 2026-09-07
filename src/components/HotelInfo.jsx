@@ -335,16 +335,16 @@ const HotelInfo = () => {
                                             )
                                                 : (
                                                     <Select
-                                                        options={districts.map((district) => ({
-                                                            value: district.provinceName,
-                                                            label: district.provinceName,
+                                                        options={(districts || []).map((district) => ({
+                                                            value: district.districtName,
+                                                            label: district.districtName,
                                                             locationId: district?.locationId
                                                         }))}
                                                         value={hotelDistrict}
                                                         onChange={(value) => {
                                                             setHotelDistrict(value);
-                                                            const hotelLocationId = districts.find((d) => d.provinceName === value)?.locationId || "";
-                                                            setHotelLocationId(hotelLocationId);
+                                                            const selectedDistrict = (districts || []).find((d) => d.districtName === value);
+                                                            setHotelLocationId(selectedDistrict?.locationId || "");
                                                         }}
                                                         style={{ width: "100%" }}
                                                         placeholder="Chọn quận/huyện"
