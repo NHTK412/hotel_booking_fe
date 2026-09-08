@@ -58,7 +58,7 @@ import {
     getTodayCheckins,
 } from "../../services/BookingService";
 import { getReviewsByRoomType } from "../../services/ReviewService";
-import { ACCOMMODATION_TYPE_CONFIG } from "../../config/themeConfig";
+import { ACCOMMODATION_TYPE_CONFIG, getAccommodationTypeConfig } from "../../config/themeConfig";
 import LeafletLocationPicker from "../../components/common/LeafletLocationPicker";
 
 const { Title, Text, Paragraph } = Typography;
@@ -261,7 +261,7 @@ const AdminAccommodationDetailPage = () => {
         }
     };
 
-    const typeConfig = detail?.type ? ACCOMMODATION_TYPE_CONFIG[detail.type] : null;
+    const typeConfig = detail?.type ? getAccommodationTypeConfig(detail.type) : null;
 
     // Table columns: Room Types
     const roomTypeColumns = [

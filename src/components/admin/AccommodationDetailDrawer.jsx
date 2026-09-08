@@ -25,7 +25,7 @@ import {
     StarFilled,
 } from "@ant-design/icons";
 import { getAccommodationById, deleteAccommodation } from "../../services/AccommodationService";
-import { ACCOMMODATION_TYPE_CONFIG } from "../../config/themeConfig";
+import { ACCOMMODATION_TYPE_CONFIG, getAccommodationTypeConfig } from "../../config/themeConfig";
 import LeafletLocationPicker from "../common/LeafletLocationPicker";
 
 const { Title, Text, Paragraph } = Typography;
@@ -87,7 +87,7 @@ const AccommodationDetailDrawer = ({
         }
     };
 
-    const typeConfig = detail?.type ? ACCOMMODATION_TYPE_CONFIG[detail.type] : null;
+    const typeConfig = detail?.type ? getAccommodationTypeConfig(detail.type) : null;
 
     const roomTypeColumns = [
         {

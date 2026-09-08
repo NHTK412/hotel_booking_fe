@@ -261,6 +261,36 @@ export const ACCOMMODATION_TYPE_CONFIG = {
   },
 };
 
+/**
+ * Tra cứu cấu hình loại hình cơ sở lưu trú từ Enum chuẩn backend hoặc chuỗi mô tả
+ * @param {string} type - Enum key (HOTEL, RESORT, HOMESTAY, APARTMENT, HOSTEL) hoặc chuỗi mô tả tiếng Việt cũ
+ * @returns {object} { value, label, tagColor, color }
+ */
+export const getAccommodationTypeConfig = (type) => {
+  if (!type) {
+    return { value: 'UNKNOWN', label: 'Chỗ nghỉ', tagColor: 'default', color: '#64748b' };
+  }
+
+  // Tra cứu theo key Enum chuẩn
+  if (ACCOMMODATION_TYPE_CONFIG[type]) {
+    return ACCOMMODATION_TYPE_CONFIG[type];
+  }
+
+  // Tương thích ngược nếu còn sót chuỗi mô tả cũ
+  const legacyMap = {
+    'Khách sạn': ACCOMMODATION_TYPE_CONFIG.HOTEL,
+    'Khu nghỉ dưỡng': ACCOMMODATION_TYPE_CONFIG.RESORT,
+    'Nhà ở': ACCOMMODATION_TYPE_CONFIG.HOMESTAY,
+    'Homestay': ACCOMMODATION_TYPE_CONFIG.HOMESTAY,
+    'Căn hộ': ACCOMMODATION_TYPE_CONFIG.APARTMENT,
+    'Căn hộ dịch vụ': ACCOMMODATION_TYPE_CONFIG.APARTMENT,
+    'Nhà trọ': ACCOMMODATION_TYPE_CONFIG.HOSTEL,
+    'Nhà nghỉ thanh niên': ACCOMMODATION_TYPE_CONFIG.HOSTEL,
+  };
+
+  return legacyMap[type] || { value: type, label: type, tagColor: 'default', color: '#64748b' };
+};
+
 export const ROOM_STATUS_CONFIG = {
   AVAILABLE: {
     value: 'AVAILABLE',

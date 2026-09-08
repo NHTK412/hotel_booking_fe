@@ -28,7 +28,11 @@ const updateUserInfo = async (data) => {
 }
 const getStaffByHotel = async (hotelId, page, size, isDeleted) => {
     try {
-        const response = await axios.get(`/users/accommodation/${hotelId}?page=${page}&size=${size}&isDeleted=${isDeleted}`);
+        const params = {};
+        if (page !== undefined) params.page = page;
+        if (size !== undefined) params.size = size;
+        if (isDeleted !== undefined) params.isDeleted = isDeleted;
+        const response = await axios.get(`/users/accommodation/${hotelId}`, { params });
         return response;
     } catch (error) {
         throw error;
@@ -81,6 +85,24 @@ const addStaffByEmail = async (hotelId, data) => {
     }
 }
 
+const registerHost = async (data) => {
+    try {
+        const response = await axios.post("/users/host", data);
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};
+
+const getAllStaff = async (params = {}) => {
+    try {
+        const response = await axios.get("/users/staff", { params });
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};
+
 export {
     getUserInfo,
     getListHotel,
@@ -90,5 +112,7 @@ export {
     deleteStaff,
     restoreStaff,
     getUserById,
-    addStaffByEmail
+    addStaffByEmail,
+    registerHost,
+    getAllStaff
 }

@@ -32,7 +32,7 @@ import {
     restoreAccommodation,
 } from "../../services/AccommodationService";
 import { getAllProvinceNames, getDistrictsByProvinceName } from "../../services/LocationService";
-import { ACCOMMODATION_TYPE_CONFIG } from "../../config/themeConfig";
+import { ACCOMMODATION_TYPE_CONFIG, getAccommodationTypeConfig } from "../../config/themeConfig";
 import AccommodationModal from "../../components/admin/AccommodationModal";
 
 const AdminAccommodationsPage = () => {
@@ -200,17 +200,32 @@ const AdminAccommodationsPage = () => {
 
     const columns = [
         {
-            title: "Ảnh bìa",
+            title: "ID",
+            dataIndex: "accommodationId",
+            key: "accommodationId",
+            width: 75,
+            align: "center",
+            render: (id) => (
+                <span className="font-mono font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200 text-xs">
+                    #{id}
+                </span>
+            ),
+        },
+        {
+            title: "Hình ảnh",
             dataIndex: "image",
             key: "image",
             width: 90,
+            align: "center",
             render: (img) => (
-                <div className="w-16 h-12 rounded-lg overflow-hidden border border-slate-200 bg-slate-100 flex items-center justify-center">
+                <div className="w-16 h-12 rounded-lg overflow-hidden border border-slate-200 bg-slate-100 flex items-center justify-center mx-auto shadow-xs">
                     {img ? (
                         <Image
                             src={img}
+                            width="100%"
+                            height="100%"
                             alt="Hotel"
-                            className="w-full h-full object-cover"
+                            className="object-cover"
                             fallback="https://placehold.co/100x80?text=No+Image"
                         />
                     ) : (
@@ -220,51 +235,90 @@ const AdminAccommodationsPage = () => {
             ),
         },
         {
-            title: "Cơ sở lưu trú",
+            title: "Tên",
             dataIndex: "accommodationName",
             key: "accommodationName",
-            render: (name, record) => {
-                const typeConfig = ACCOMMODATION_TYPE_CONFIG[record.type];
-                return (
-                    <div className="flex flex-col">
-                        <span
-                            className="font-bold text-slate-800 hover:text-blue-600 transition-colors cursor-pointer"
-                            onClick={() => handleViewDetail(record.accommodationId)}
-                        >
-                            {name}
-                        </span>
-                        <div className="flex items-center gap-2 mt-1">
-                            <Tag color={typeConfig?.tagColor || "blue"} className="mr-0 text-xs">
-                                {typeConfig?.label || record.type}
+            width: 220,
+            render: (name, record) => (
+                <div className="flex flex-col">
+                    <span
+                        className="font-bold text-slate-800 hover:text-blue-600 transition-colors cursor-pointer line-clamp-2"
+                        onClick={() => handleViewDetail(record.accommodationId)}
+                    >
+                        {name}
+                    </span>
+                    <div className="mt-1">
+                        {record.isDeleted ? (
+                            <Tag color="error" className="mr-0 text-xs font-medium">
+                                Đã khóa
                             </Tag>
-                            {record.isDeleted ? (
-                                <Tag color="error" className="mr-0 text-xs font-medium">
-                                    Đã khóa
-                                </Tag>
-                            ) : (
-                                <Tag color="success" className="mr-0 text-xs font-medium">
-                                    Hoạt động
-                                </Tag>
-                            )}
-                        </div>
+                        ) : (
+                            <Tag color="success" className="mr-0 text-xs font-medium">
+                                Hoạt động
+                            </Tag>
+                        )}
                     </div>
-                );
-            },
-        },
-        {
-            title: "Địa chỉ & Thành phố",
-            key: "location",
-            render: (_, record) => (
-                <div className="flex flex-col text-xs text-slate-600">
-                    <span className="font-medium text-slate-800">{record.city || "Chưa cập nhật"}</span>
-                    <span className="text-slate-500 truncate max-w-xs">{record.address}</span>
                 </div>
             ),
         },
         {
-            title: "Tọa độ GPS",
-            key: "coordinates",
+            title: "Loại hình",
+            dataIndex: "type",
+            key: "type",
+            width: 130,
+            render: (type) => {
+                const typeConfig = getAccommodationTypeConfig(type);
+                return (
+                    <Tag color={typeConfig?.tagColor || "blue"} className="mr-0 text-xs font-medium">
+                        {typeConfig?.label || type || "Chưa phân loại"}
+                    </Tag>
+                );
+            },
+        },
+        {
+            title: "Thành phố",
+            dataIndex: "city",
+            key: "city",
+            width: 130,
+            render: (city) => (
+                <span className="text-slate-800 font-medium text-xs">
+                    {city || "—"}
+                </span>
+            ),
+        },
+        {
+            title: "Huyện",
+            key: "district",
             width: 140,
+            render: (_, record) => {
+                const district = record.district || record.districtName || record.location?.districtName;
+                return (
+                    <span className="text-slate-600 text-xs">
+                        {district || "—"}
+                    </span>
+                );
+            },
+        },
+        {
+            title: "Địa chỉ",
+            dataIndex: "address",
+            key: "address",
+            width: 200,
+            render: (address) =>
+                address ? (
+                    <Tooltip title={address}>
+                        <span className="text-slate-600 text-xs truncate max-w-xs block">
+                            {address}
+                        </span>
+                    </Tooltip>
+                ) : (
+                    <span className="text-slate-400 text-xs italic">—</span>
+                ),
+        },
+        {
+            title: "Tọa độ",
+            key: "coordinates",
+            width: 150,
             render: (_, record) => {
                 const lat = record.latitude || record.lat;
                 const lng = record.longitude || record.lng;
@@ -283,8 +337,9 @@ const AdminAccommodationsPage = () => {
         {
             title: "Hành động",
             key: "actions",
-            width: 130,
+            width: 110,
             align: "center",
+            fixed: "right",
             render: (_, record) => (
                 <Space size="small">
                     <Tooltip title="Xem chi tiết & giám sát hoạt động">
@@ -460,6 +515,7 @@ const AdminAccommodationsPage = () => {
                 columns={columns}
                 dataSource={accommodations}
                 loading={isLoading}
+                scroll={{ x: 1250 }}
                 pagination={{
                     current: currentPage,
                     pageSize: pageSize,

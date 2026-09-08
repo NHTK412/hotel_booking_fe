@@ -8,6 +8,7 @@ import { getAllProvinceNames, getDistrictsByProvinceName } from "../services/Loc
 import { MapContainer, Marker, TileLayer, useMapEvents } from "react-leaflet";
 import 'leaflet/dist/leaflet.css';
 import { uploadFile } from "../services/UploadFileService";
+import { ACCOMMODATION_TYPE_CONFIG, getAccommodationTypeConfig } from "../config/themeConfig";
 
 const HotelInfo = () => {
     const { listHotel, hotelCurrent, isLoading } = useContext(globalContext);
@@ -34,28 +35,10 @@ const HotelInfo = () => {
 
     const isManager = listHotel[hotelCurrent]?.staffRole === "ROLE_MANAGER";
 
-    const hotelTypeOptions = [
-        {
-            value: "HOTEL",
-            label: "Khách sạn"
-        },
-        {
-            value: "HOSTEL",
-            label: "Nhà trọ"
-        },
-        {
-            value: "APARTMENT",
-            label: "Căn hộ"
-        },
-        {
-            value: "HOMESTAY",
-            label: "Nhà ở"
-        },
-        {
-            value: "RESORT",
-            label: "Khu nghỉ dưỡng"
-        }
-    ]
+    const hotelTypeOptions = Object.values(ACCOMMODATION_TYPE_CONFIG).map((item) => ({
+        value: item.value,
+        label: item.label,
+    }));
 
     useEffect(() => {
         fetchProvinces();
@@ -278,7 +261,7 @@ const HotelInfo = () => {
                                         <p className="text-gray-500">Loại </p>
                                         {
                                             !isEditing ? (
-                                                <p className="font-medium">{hotelTypeOptions.find((t) => t.value === hotel?.type)?.label}</p>
+                                                <p className="font-medium">{getAccommodationTypeConfig(hotel?.type)?.label}</p>
                                             )
                                                 :
                                                 (
