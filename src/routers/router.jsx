@@ -13,6 +13,7 @@ import DashboardPage from "../pages/DashboardPage";
 import StaffPage from "../pages/StaffPage";
 import AdminDashboardPage from "../pages/admin/AdminDashboardPage";
 import AdminAccommodationsPage from "../pages/admin/AdminAccommodationsPage";
+import AdminAccommodationDetailPage from "../pages/admin/AdminAccommodationDetailPage";
 import AdminHostsPage from "../pages/admin/AdminHostsPage";
 import AdminLocationsPage from "../pages/admin/AdminLocationsPage";
 
@@ -55,6 +56,10 @@ const router = createBrowserRouter([
             {
                 path: "accommodations",
                 element: <AdminAccommodationsPage />,
+            },
+            {
+                path: "accommodations/:id",
+                element: <AdminAccommodationDetailPage />,
             },
             {
                 path: "hosts",

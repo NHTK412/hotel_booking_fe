@@ -9,7 +9,6 @@ import {
     Row,
     Col,
     notification,
-    Spin,
     Image,
     InputNumber,
     Tag,
@@ -24,8 +23,6 @@ import {
 import LeafletLocationPicker from "../common/LeafletLocationPicker";
 import {
     createAccommodation,
-    updateAccommodation,
-    getAccommodationById,
 } from "../../services/AccommodationService";
 import { getAllProvinceNames, getDistrictsByProvinceName } from "../../services/LocationService";
 import { uploadFile } from "../../services/UploadFileService";
@@ -38,97 +35,32 @@ const accommodationTypeOptions = Object.values(ACCOMMODATION_TYPE_CONFIG).map((i
     label: item.label,
 }));
 
-const AccommodationModal = ({ open, onClose, onSuccess, initialData = null }) => {
+const AccommodationModal = ({ open, onClose, onSuccess }) => {
     const [form] = Form.useForm();
     const watchedProvince = Form.useWatch("province", form);
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
-    const [isLoadingDetail, setIsLoadingDetail] = useState(false);
     const [provinces, setProvinces] = useState([]);
     const [districts, setDistricts] = useState([]);
     const [isLoadingDistricts, setIsLoadingDistricts] = useState(false);
     const [imageUrl, setImageUrl] = useState("");
     const [coords, setCoords] = useState({ lat: 10.7769, lng: 106.7009 });
 
-    const isEditMode = !!initialData?.accommodationId;
-
     useEffect(() => {
         if (open) {
             loadProvinces();
-            if (initialData?.accommodationId) {
-                loadAccommodationDetail(initialData.accommodationId);
-            } else {
-                form.resetFields();
-                form.setFieldsValue({
-                    type: "HOTEL",
-                    latitude: 10.7769,
-                    longitude: 106.7009,
-                });
-                setImageUrl("");
-                setDistricts([]);
-                setCoords({ lat: 10.7769, lng: 106.7009 });
-            }
-        }
-    }, [open, initialData?.accommodationId]);
-
-    const loadAccommodationDetail = async (id) => {
-        try {
-            setIsLoadingDetail(true);
-            const res = await getAccommodationById(id);
-            const data = res?.data || res;
-
-            if (data) {
-                const lat = data.latitude
-                    ? Number(data.latitude)
-                    : data.lat
-                    ? Number(data.lat)
-                    : 10.7769;
-                const lng = data.longitude
-                    ? Number(data.longitude)
-                    : data.lng
-                    ? Number(data.lng)
-                    : 106.7009;
-                const locId = data.locationId ? Number(data.locationId) : undefined;
-
-                // Match enum value (HOTEL, RESORT...) hoặc label tiếng Việt (Khách sạn...)
-                const matchedType =
-                    Object.values(ACCOMMODATION_TYPE_CONFIG).find(
-                        (t) => t.value === data.type || t.label === data.type
-                    )?.value ||
-                    data.type ||
-                    "HOTEL";
-
-                form.setFieldsValue({
-                    accommodationName: data.accommodationName || "",
-                    type: matchedType,
-                    province: data.city || undefined,
-                    address: data.address || "",
-                    locationId: locId,
-                    district: locId,
-                    description: data.description || "",
-                    latitude: lat,
-                    longitude: lng,
-                    image: data.image || "",
-                });
-
-                setImageUrl(data.image || "");
-                setCoords({ lat, lng });
-
-                if (data.city) {
-                    await loadDistricts(data.city, locId);
-                }
-            }
-        } catch (error) {
-            console.error("Lỗi tải chi tiết cơ sở lưu trú:", error);
-            notification.error({
-                message: "Không thể lấy thông tin chi tiết",
-                description: error?.message || "Đã xảy ra lỗi khi tải dữ liệu cơ sở lưu trú.",
+            form.resetFields();
+            form.setFieldsValue({
+                type: "HOTEL",
+                latitude: 10.7769,
+                longitude: 106.7009,
             });
-        } finally {
-            setIsLoadingDetail(false);
+            setImageUrl("");
+            setDistricts([]);
+            setCoords({ lat: 10.7769, lng: 106.7009 });
         }
-    };
+    }, [open]);
 
     const loadProvinces = async () => {
         try {
@@ -140,20 +72,12 @@ const AccommodationModal = ({ open, onClose, onSuccess, initialData = null }) =>
         }
     };
 
-    const loadDistricts = async (provinceName, selectedLocationId = null) => {
+    const loadDistricts = async (provinceName) => {
         try {
             setIsLoadingDistricts(true);
             const data = await getDistrictsByProvinceName(provinceName);
             const list = Array.isArray(data) ? data : data?.data || [];
             setDistricts(list);
-
-            if (selectedLocationId) {
-                const numLocId = Number(selectedLocationId);
-                form.setFieldsValue({
-                    district: numLocId,
-                    locationId: numLocId,
-                });
-            }
         } catch (error) {
             console.error("Lỗi tải danh sách quận huyện:", error);
         } finally {
@@ -245,26 +169,18 @@ const AccommodationModal = ({ open, onClose, onSuccess, initialData = null }) =>
                 locationId: Number(values.locationId || values.district),
             };
 
-            if (isEditMode) {
-                await updateAccommodation(initialData.accommodationId, payload);
-                notification.success({
-                    message: "Cập nhật thành công",
-                    description: `Đã cập nhật thông tin khách sạn "${payload.accommodationName}".`,
-                });
-            } else {
-                await createAccommodation(payload);
-                notification.success({
-                    message: "Tạo mới thành công",
-                    description: `Đã thêm mới cơ sở lưu trú "${payload.accommodationName}".`,
-                });
-            }
+            await createAccommodation(payload);
+            notification.success({
+                message: "Tạo mới thành công",
+                description: `Đã thêm mới cơ sở lưu trú "${payload.accommodationName}".`,
+            });
 
             if (onSuccess) onSuccess();
             onClose();
         } catch (error) {
             console.error("Lỗi lưu cơ sở lưu trú:", error);
             notification.error({
-                message: isEditMode ? "Cập nhật thất bại" : "Tạo mới thất bại",
+                message: "Tạo mới thất bại",
                 description:
                     error?.message ||
                     error?.response?.data?.message ||
@@ -280,7 +196,7 @@ const AccommodationModal = ({ open, onClose, onSuccess, initialData = null }) =>
             title={
                 <div className="flex items-center gap-2 text-slate-800 text-lg font-bold pb-2 border-b border-slate-100">
                     <HomeOutlined className="text-blue-600" />
-                    <span>{isEditMode ? "Chỉnh Sửa Cơ Sở Lưu Trú" : "Thêm Mới Cơ Sở Lưu Trú"}</span>
+                    <span>Thêm Mới Cơ Sở Lưu Trú</span>
                 </div>
             }
             open={open}
@@ -290,10 +206,9 @@ const AccommodationModal = ({ open, onClose, onSuccess, initialData = null }) =>
             destroyOnClose
             centered
         >
-            <Spin spinning={isLoadingDetail}>
-                <Form
-                    form={form}
-                    layout="vertical"
+            <Form
+                form={form}
+                layout="vertical"
                 onFinish={handleSubmit}
                 requiredMark="optional"
                 className="mt-4"
@@ -506,11 +421,10 @@ const AccommodationModal = ({ open, onClose, onSuccess, initialData = null }) =>
                         Hủy
                     </Button>
                     <Button type="primary" htmlType="submit" loading={isSubmitting} className="px-6">
-                        {isEditMode ? "Lưu Cập Nhật" : "Tạo Cơ Sở Lưu Trú"}
+                        Tạo Cơ Sở Lưu Trú
                     </Button>
                 </div>
-                </Form>
-            </Spin>
+            </Form>
         </Modal>
     );
 };

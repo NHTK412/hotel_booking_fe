@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import {
     Table,
     Button,
@@ -11,120 +12,178 @@ import {
     notification,
     Card,
     Tooltip,
-    Rate,
     Empty,
 } from "antd";
 import {
     PlusOutlined,
-    EditOutlined,
-    DeleteOutlined,
+    EyeOutlined,
+    LockOutlined,
+    UnlockOutlined,
     ReloadOutlined,
     SearchOutlined,
     HomeOutlined,
     EnvironmentOutlined,
+    CheckCircleOutlined,
+    AppstoreOutlined,
 } from "@ant-design/icons";
 import {
     getAllAccommodations,
-    getAccommodationById,
     deleteAccommodation,
-    searchAccommodations,
+    restoreAccommodation,
 } from "../../services/AccommodationService";
-import { getAllProvinceNames } from "../../services/LocationService";
+import { getAllProvinceNames, getDistrictsByProvinceName } from "../../services/LocationService";
 import { ACCOMMODATION_TYPE_CONFIG } from "../../config/themeConfig";
 import AccommodationModal from "../../components/admin/AccommodationModal";
 
 const AdminAccommodationsPage = () => {
+    const navigate = useNavigate();
+
     const [accommodations, setAccommodations] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedType, setSelectedType] = useState(undefined);
     const [selectedProvince, setSelectedProvince] = useState(undefined);
+    const [districts, setDistricts] = useState([]);
+    const [isLoadingDistricts, setIsLoadingDistricts] = useState(false);
+    const [selectedLocationId, setSelectedLocationId] = useState(undefined);
+    const [sortBy, setSortBy] = useState(undefined);
     const [provinces, setProvinces] = useState([]);
+    const [statusFilter, setStatusFilter] = useState("ACTIVE"); // Mặc định là không khóa
 
     // Modal state
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [selectedAccommodation, setSelectedAccommodation] = useState(null);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
     // Phân trang
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
 
-    useEffect(() => {
-        loadProvinces();
-        fetchAccommodations();
-    }, [selectedType]);
-
     const loadProvinces = async () => {
         try {
             const data = await getAllProvinceNames();
-            setProvinces(Array.isArray(data) ? data : []);
+            setProvinces(Array.isArray(data) ? data : data?.data || []);
         } catch (error) {
             console.error("Lỗi lấy tỉnh thành:", error);
         }
     };
 
-    const fetchAccommodations = async () => {
-        try {
-            setIsLoading(true);
-            const response = await getAllAccommodations({
-                page: 0,
-                size: 100, // Load danh sách tổng để lọc và phân trang mượt mà
-                type: selectedType,
-            });
+    const fetchAccommodations = useCallback(
+        async (customPage, customSize) => {
+            try {
+                setIsLoading(true);
+                const targetPage = customPage !== undefined ? customPage : currentPage;
+                const targetSize = customSize !== undefined ? customSize : pageSize;
+                const apiPage = Math.max(0, targetPage - 1);
 
-            const data = response?.data || response || [];
-            setAccommodations(Array.isArray(data) ? data : []);
-        } catch (error) {
-            console.error("Lỗi tải danh sách cơ sở lưu trú:", error);
-            notification.error({
-                message: "Không thể tải danh sách khách sạn",
-                description: error?.message || "Đã xảy ra lỗi khi kết nối tới máy chủ.",
-            });
-        } finally {
-            setIsLoading(false);
+                let response;
+                const incDel = statusFilter === "ALL" || statusFilter === "LOCKED";
+
+                if (searchTerm && searchTerm.trim()) {
+                    response = await searchAccommodations({
+                        keyword: searchTerm.trim(),
+                        page: apiPage,
+                        size: targetSize,
+                    });
+                } else {
+                    response = await getAllAccommodations({
+                        page: apiPage,
+                        size: targetSize,
+                        type: selectedType || undefined,
+                        locationId: selectedLocationId || undefined,
+                        sortBy: sortBy !== undefined ? sortBy : undefined,
+                        includeDeleted: incDel,
+                    });
+                }
+
+                let data = response?.data || response || [];
+                if (!Array.isArray(data)) data = [];
+
+                // Áp dụng bộ lọc trạng thái
+                if (statusFilter === "ACTIVE") {
+                    data = data.filter((item) => !item.isDeleted);
+                } else if (statusFilter === "LOCKED") {
+                    data = data.filter((item) => item.isDeleted === true);
+                }
+
+                setAccommodations(data);
+            } catch (error) {
+                console.error("Lỗi tải danh sách cơ sở lưu trú:", error);
+                notification.error({
+                    message: "Không thể tải danh sách khách sạn",
+                    description: error?.message || "Đã xảy ra lỗi khi kết nối tới máy chủ.",
+                });
+            } finally {
+                setIsLoading(false);
+            }
+        },
+        [currentPage, pageSize, searchTerm, selectedType, selectedLocationId, sortBy, statusFilter]
+    );
+
+    useEffect(() => {
+        loadProvinces();
+    }, []);
+
+    useEffect(() => {
+        fetchAccommodations();
+    }, [fetchAccommodations]);
+
+    const handleProvinceChange = async (province) => {
+        setSelectedProvince(province);
+        setSelectedLocationId(undefined);
+        setCurrentPage(1);
+
+        if (province) {
+            try {
+                setIsLoadingDistricts(true);
+                const data = await getDistrictsByProvinceName(province);
+                const list = Array.isArray(data) ? data : data?.data || [];
+                setDistricts(list);
+            } catch (error) {
+                console.error("Lỗi tải quận huyện:", error);
+                setDistricts([]);
+            } finally {
+                setIsLoadingDistricts(false);
+            }
+        } else {
+            setDistricts([]);
         }
     };
 
-    const handleSearch = async () => {
-        if (!searchTerm.trim()) {
-            fetchAccommodations();
-            return;
-        }
-
-        try {
-            setIsLoading(true);
-            const response = await searchAccommodations({
-                keyword: searchTerm.trim(),
-                page: 0,
-                size: 100,
-            });
-            const data = response?.data || response || [];
-            setAccommodations(Array.isArray(data) ? data : []);
-        } catch (error) {
-            console.error("Lỗi tìm kiếm:", error);
-            notification.error({
-                message: "Lỗi tìm kiếm",
-                description: "Không thể thực hiện tìm kiếm cơ sở lưu trú.",
-            });
-        } finally {
-            setIsLoading(false);
-        }
+    const handleResetFilters = () => {
+        setSearchTerm("");
+        setSelectedType(undefined);
+        setSelectedProvince(undefined);
+        setDistricts([]);
+        setSelectedLocationId(undefined);
+        setSortBy(undefined);
+        setStatusFilter("ACTIVE");
+        setCurrentPage(1);
     };
 
-    const handleDelete = async (id, name) => {
+    const handleToggleLock = async (record) => {
         try {
             setIsLoading(true);
-            await deleteAccommodation(id);
-            notification.success({
-                message: "Xóa thành công",
-                description: `Đã xóa cơ sở lưu trú "${name}".`,
-            });
+            if (record.isDeleted) {
+                await restoreAccommodation(record.accommodationId);
+                notification.success({
+                    message: "Khôi phục thành công",
+                    description: `Đã mở khóa và khôi phục hoạt động cho "${record.accommodationName}".`,
+                });
+            } else {
+                await deleteAccommodation(record.accommodationId);
+                notification.success({
+                    message: "Khóa thành công",
+                    description: `Đã khóa cơ sở lưu trú "${record.accommodationName}".`,
+                });
+            }
             fetchAccommodations();
         } catch (error) {
-            console.error("Lỗi xóa cơ sở lưu trú:", error);
+            console.error("Lỗi thay đổi trạng thái khóa/mở khóa:", error);
             notification.error({
-                message: "Xóa thất bại",
-                description: error?.message || "Không thể xóa cơ sở lưu trú này.",
+                message: "Thao tác thất bại",
+                description:
+                    error?.response?.data?.message ||
+                    error?.message ||
+                    "Không thể thay đổi trạng thái cơ sở lưu trú.",
             });
         } finally {
             setIsLoading(false);
@@ -132,36 +191,12 @@ const AdminAccommodationsPage = () => {
     };
 
     const openCreateModal = () => {
-        setSelectedAccommodation(null);
-        setIsModalOpen(true);
+        setIsCreateModalOpen(true);
     };
 
-    const openEditModal = async (record) => {
-        try {
-            setIsLoading(true);
-            const detailResponse = await getAccommodationById(record.accommodationId);
-            const detail = detailResponse?.data || detailResponse;
-            setSelectedAccommodation(detail || record);
-            setIsModalOpen(true);
-        } catch (error) {
-            console.error("Lỗi lấy chi tiết cơ sở lưu trú:", error);
-            setSelectedAccommodation(record);
-            setIsModalOpen(true);
-        } finally {
-            setIsLoading(false);
-        }
+    const handleViewDetail = (id) => {
+        navigate(`/admin/accommodations/${id}`);
     };
-
-    // Filter dữ liệu client theo tỉnh nếu chọn
-    const filteredAccommodations = accommodations.filter((item) => {
-        if (selectedProvince && item.city !== selectedProvince) {
-            return false;
-        }
-        if (selectedType && item.type !== selectedType) {
-            return false;
-        }
-        return true;
-    });
 
     const columns = [
         {
@@ -192,17 +227,24 @@ const AdminAccommodationsPage = () => {
                 const typeConfig = ACCOMMODATION_TYPE_CONFIG[record.type];
                 return (
                     <div className="flex flex-col">
-                        <span className="font-bold text-slate-800 hover:text-blue-600 transition-colors">
+                        <span
+                            className="font-bold text-slate-800 hover:text-blue-600 transition-colors cursor-pointer"
+                            onClick={() => handleViewDetail(record.accommodationId)}
+                        >
                             {name}
                         </span>
                         <div className="flex items-center gap-2 mt-1">
                             <Tag color={typeConfig?.tagColor || "blue"} className="mr-0 text-xs">
                                 {typeConfig?.label || record.type}
                             </Tag>
-                            {record.starRating > 0 && (
-                                <span className="text-xs text-amber-500 font-semibold flex items-center gap-0.5">
-                                    ⭐ {record.starRating}
-                                </span>
+                            {record.isDeleted ? (
+                                <Tag color="error" className="mr-0 text-xs font-medium">
+                                    Đã khóa
+                                </Tag>
+                            ) : (
+                                <Tag color="success" className="mr-0 text-xs font-medium">
+                                    Hoạt động
+                                </Tag>
                             )}
                         </div>
                     </div>
@@ -223,18 +265,20 @@ const AdminAccommodationsPage = () => {
             title: "Tọa độ GPS",
             key: "coordinates",
             width: 140,
-            render: (_, record) => (
-                record.latitude && record.longitude ? (
-                    <Tooltip title={`Vĩ độ: ${record.latitude} | Kinh độ: ${record.longitude}`}>
-                        <span className="inline-flex items-center gap-1 text-xs text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-100 font-mono">
+            render: (_, record) => {
+                const lat = record.latitude || record.lat;
+                const lng = record.longitude || record.lng;
+                return lat && lng ? (
+                    <Tooltip title={`Vĩ độ: ${lat} | Kinh độ: ${lng}`}>
+                        <span className="inline-flex items-center gap-1 text-xs text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-100 font-mono w-max">
                             <EnvironmentOutlined />
-                            {Number(record.latitude).toFixed(3)}, {Number(record.longitude).toFixed(3)}
+                            {Number(lat).toFixed(3)}, {Number(lng).toFixed(3)}
                         </span>
                     </Tooltip>
                 ) : (
                     <span className="text-xs text-slate-400 italic">Chưa ghim</span>
-                )
-            ),
+                );
+            },
         },
         {
             title: "Hành động",
@@ -243,26 +287,45 @@ const AdminAccommodationsPage = () => {
             align: "center",
             render: (_, record) => (
                 <Space size="small">
-                    <Tooltip title="Chỉnh sửa thông tin">
+                    <Tooltip title="Xem chi tiết & giám sát hoạt động">
                         <Button
                             type="text"
-                            icon={<EditOutlined className="text-blue-600" />}
-                            onClick={() => openEditModal(record)}
+                            icon={<EyeOutlined className="text-blue-600 text-base" />}
+                            onClick={() => handleViewDetail(record.accommodationId)}
                         />
                     </Tooltip>
 
-                    <Tooltip title="Xóa cơ sở lưu trú">
-                        <Popconfirm
-                            title="Xác nhận xóa khách sạn"
-                            description={`Bạn có chắc chắn muốn xóa "${record.accommodationName}" không? Hành động này không thể hoàn tác.`}
-                            onConfirm={() => handleDelete(record.accommodationId, record.accommodationName)}
-                            okText="Xóa"
-                            cancelText="Hủy"
-                            okButtonProps={{ danger: true }}
-                        >
-                            <Button type="text" danger icon={<DeleteOutlined />} />
-                        </Popconfirm>
-                    </Tooltip>
+                    {record.isDeleted ? (
+                        <Tooltip title="Mở khóa / Khôi phục cơ sở lưu trú">
+                            <Popconfirm
+                                title="Mở khóa cơ sở lưu trú"
+                                description={`Khôi phục hoạt động cho "${record.accommodationName}"?`}
+                                onConfirm={() => handleToggleLock(record)}
+                                okText="Mở khóa"
+                                cancelText="Hủy"
+                                okButtonProps={{ type: "primary" }}
+                            >
+                                <Button
+                                    type="text"
+                                    className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                                    icon={<UnlockOutlined className="text-base" />}
+                                />
+                            </Popconfirm>
+                        </Tooltip>
+                    ) : (
+                        <Tooltip title="Khóa cơ sở lưu trú (Xóa mềm)">
+                            <Popconfirm
+                                title="Khóa cơ sở lưu trú"
+                                description={`Bạn có chắc muốn khóa/ngừng hoạt động cơ sở lưu trú "${record.accommodationName}" không?`}
+                                onConfirm={() => handleToggleLock(record)}
+                                okText="Khóa"
+                                cancelText="Hủy"
+                                okButtonProps={{ danger: true }}
+                            >
+                                <Button type="text" danger icon={<LockOutlined className="text-base" />} />
+                            </Popconfirm>
+                        </Tooltip>
+                    )}
                 </Space>
             ),
         },
@@ -270,7 +333,6 @@ const AdminAccommodationsPage = () => {
 
     return (
         <div className="space-y-6">
-            {/* Header Title & Actions */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-slate-100">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-800">Quản Trị Cơ Sở Lưu Trú</h1>
@@ -280,7 +342,7 @@ const AdminAccommodationsPage = () => {
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <Button icon={<ReloadOutlined />} onClick={fetchAccommodations} loading={isLoading}>
+                    <Button icon={<ReloadOutlined />} onClick={handleResetFilters} loading={isLoading}>
                         Làm mới
                     </Button>
                     <Button type="primary" icon={<PlusOutlined />} onClick={openCreateModal} size="middle">
@@ -289,85 +351,138 @@ const AdminAccommodationsPage = () => {
                 </div>
             </div>
 
-            {/* Filter & Search Bar */}
             <Card className="border-slate-200 shadow-xs" bodyStyle={{ padding: "16px" }}>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                    <Input
-                        placeholder="Tìm theo tên cơ sở lưu trú..."
-                        prefix={<SearchOutlined className="text-slate-400" />}
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        onPressEnter={handleSearch}
-                        allowClear
-                    />
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3">
+                    <div className="lg:col-span-2">
+                        <Input
+                            placeholder="Tìm theo tên cơ sở lưu trú..."
+                            prefix={<SearchOutlined className="text-slate-400" />}
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            onPressEnter={() => {
+                                setCurrentPage(1);
+                                fetchAccommodations(1);
+                            }}
+                            allowClear
+                        />
+                    </div>
 
-                    <Select
-                        placeholder="Lọc theo loại hình"
-                        allowClear
-                        value={selectedType}
-                        onChange={(val) => setSelectedType(val)}
-                        options={Object.values(ACCOMMODATION_TYPE_CONFIG).map((item) => ({
-                            value: item.value,
-                            label: item.label,
-                        }))}
-                    />
+                    <div>
+                        <Select
+                            placeholder="Loại hình"
+                            allowClear
+                            className="w-full"
+                            value={selectedType}
+                            onChange={(val) => {
+                                setSelectedType(val);
+                                setCurrentPage(1);
+                            }}
+                            options={Object.values(ACCOMMODATION_TYPE_CONFIG).map((item) => ({
+                                value: item.value,
+                                label: item.label,
+                            }))}
+                        />
+                    </div>
 
-                    <Select
-                        placeholder="Lọc theo Tỉnh/Thành"
-                        allowClear
-                        showSearch
-                        value={selectedProvince}
-                        onChange={(val) => setSelectedProvince(val)}
-                        options={provinces.map((p) => ({ value: p, label: p }))}
-                    />
+                    <div>
+                        <Select
+                            placeholder="Tỉnh / Thành phố"
+                            allowClear
+                            showSearch
+                            className="w-full"
+                            value={selectedProvince}
+                            onChange={handleProvinceChange}
+                            options={provinces.map((p) => ({ value: p, label: p }))}
+                        />
+                    </div>
 
-                    <Button type="primary" icon={<SearchOutlined />} onClick={handleSearch}>
-                        Tìm kiếm
-                    </Button>
+                    <div>
+                        <Select
+                            placeholder={isLoadingDistricts ? "Đang tải..." : "Quận / Huyện"}
+                            allowClear
+                            showSearch
+                            disabled={!selectedProvince || isLoadingDistricts}
+                            className="w-full"
+                            value={selectedLocationId}
+                            onChange={(val) => {
+                                setSelectedLocationId(val);
+                                setCurrentPage(1);
+                            }}
+                            filterOption={(input, option) =>
+                                (option?.label ?? "").toLowerCase().includes(input.toLowerCase())
+                            }
+                            options={districts.map((d) => ({
+                                value: d.locationId,
+                                label: d.districtName,
+                            }))}
+                        />
+                    </div>
+
+                    <div>
+                        <Select
+                            placeholder="Sắp xếp"
+                            allowClear
+                            className="w-full"
+                            value={sortBy}
+                            onChange={(val) => {
+                                setSortBy(val);
+                                setCurrentPage(1);
+                            }}
+                            options={[
+                                { value: true, label: "Ưu tiên" },
+                                { value: false, label: "Mặc định" },
+                            ]}
+                        />
+                    </div>
+
+                    <div>
+                        <Select
+                            placeholder="Trạng thái"
+                            className="w-full"
+                            value={statusFilter}
+                            onChange={(val) => {
+                                setStatusFilter(val);
+                                setCurrentPage(1);
+                            }}
+                            options={[
+                                { value: "ACTIVE", label: "Không khóa" },
+                                { value: "LOCKED", label: "Bị khóa" },
+                                { value: "ALL", label: "Toàn bộ" },
+                            ]}
+                        />
+                    </div>
                 </div>
             </Card>
 
-            {/* Data Table */}
+            {/* Data Table: Render trực tiếp accommodations từ API */}
             <Table
                 rowKey="accommodationId"
                 columns={columns}
-                dataSource={filteredAccommodations}
+                dataSource={accommodations}
                 loading={isLoading}
                 pagination={{
                     current: currentPage,
                     pageSize: pageSize,
-                    total: filteredAccommodations.length,
+                    total:
+                        accommodations.length < pageSize
+                            ? (currentPage - 1) * pageSize + accommodations.length
+                            : (currentPage + 1) * pageSize,
                     showSizeChanger: true,
                     pageSizeOptions: ["5", "10", "20", "50"],
                     onChange: (page, size) => {
                         setCurrentPage(page);
                         setPageSize(size);
                     },
-                    showTotal: (total) => `Tổng cộng ${total} cơ sở lưu trú`,
-                }}
-                locale={{
-                    emptyText: (
-                        <Empty
-                            image={Empty.PRESENTED_IMAGE_SIMPLE}
-                            description={
-                                <div className="space-y-2 py-4">
-                                    <p className="text-slate-500 font-medium">Chưa có cơ sở lưu trú nào phù hợp.</p>
-                                    <Button type="primary" icon={<PlusOutlined />} onClick={openCreateModal}>
-                                        Tạo Khách Sạn Đầu Tiên
-                                    </Button>
-                                </div>
-                            }
-                        />
-                    ),
+                    showTotal: (total) =>
+                        `Trang ${currentPage} | Đang hiển thị ${accommodations.length} cơ sở lưu trú`,
                 }}
             />
 
-            {/* Modal Thêm & Sửa Khách Sạn */}
+            {/* Modal Thêm Mới Khách Sạn (Admin Role) */}
             <AccommodationModal
-                open={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                onSuccess={fetchAccommodations}
-                initialData={selectedAccommodation}
+                open={isCreateModalOpen}
+                onClose={() => setIsCreateModalOpen(false)}
+                onSuccess={() => fetchAccommodations()}
             />
         </div>
     );

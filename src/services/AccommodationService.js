@@ -6,12 +6,14 @@ const getAllAccommodations = async ({
     size = 10,
     type,
     locationId,
-    sortBy
+    sortBy,
+    includeDeleted = true,
 } = {}) => {
     let url = `/accommodations?page=${page}&size=${size}`;
     if (type) url += `&type=${encodeURIComponent(type)}`;
     if (locationId) url += `&locationId=${locationId}`;
     if (sortBy !== undefined) url += `&sortBy=${sortBy}`;
+    if (includeDeleted !== undefined) url += `&includeDeleted=${includeDeleted}`;
 
     return await axios.get(url);
 };
@@ -26,14 +28,21 @@ const createAccommodation = async (data) => {
     return await axios.post("/accommodations", data);
 };
 
-// Cập nhật thông tin cơ sở lưu trú (Admin và Host)
+// Cập nhật thông tin cơ sở lưu trú (Chỉ Host)
 const updateAccommodation = async (id, data) => {
     return await axios.put(`/accommodations/${id}`, data);
 };
 
-// Xóa cơ sở lưu trú (Admin và Host)
+// Khóa cơ sở lưu trú (Xóa mềm - Chỉ Admin)
 const deleteAccommodation = async (id) => {
     return await axios.delete(`/accommodations/${id}`);
+};
+
+const lockAccommodation = deleteAccommodation;
+
+// Mở khóa / Khôi phục cơ sở lưu trú (Chỉ Admin)
+const restoreAccommodation = async (id) => {
+    return await axios.patch(`/accommodations/${id}/restore`);
 };
 
 // Tìm kiếm khách sạn theo từ khóa
@@ -49,5 +58,7 @@ export {
     createAccommodation,
     updateAccommodation,
     deleteAccommodation,
-    searchAccommodations
+    lockAccommodation,
+    restoreAccommodation,
+    searchAccommodations,
 };
