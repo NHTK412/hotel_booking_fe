@@ -90,10 +90,10 @@ const NewRoomType = ({ fetchRoomTypes, setIsShowModalNewRoomType }) => {
             return;
         }
 
-        if (discount < 0 || discount >= price) {
+        if (discount < 0 || discount > 100) {
             notification.warning({
                 message: "Giảm giá không hợp lệ",
-                description: "Mức giảm giá phải nhỏ hơn giá niêm yết ban đầu.",
+                description: "Tỷ lệ giảm giá phải từ 0% đến 100%.",
             });
             return;
         }
@@ -156,7 +156,7 @@ const NewRoomType = ({ fetchRoomTypes, setIsShowModalNewRoomType }) => {
         }
     };
 
-    const finalPrice = Math.max(0, price - discount);
+    const finalPrice = Math.max(0, Math.round(price * (1 - (discount || 0) / 100)));
 
     return (
         <Spin spinning={isLoading} tip="Đang tải ảnh và lưu loại phòng...">
@@ -249,15 +249,15 @@ const NewRoomType = ({ fetchRoomTypes, setIsShowModalNewRoomType }) => {
                     </Col>
                     <Col span={12}>
                         <label className="text-xs font-semibold text-slate-700 block mb-1">
-                            Số Tiền Giảm Giá (VNĐ):
+                            Tỷ Lệ Giảm Giá (%):
                         </label>
                         <InputNumber
                             value={discount}
                             onChange={(val) => setDiscount(Number(val) || 0)}
-                            formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
-                            parser={(value) => value?.replace(/\$\s?|(,*)/g, "")}
-                            step={10000}
                             min={0}
+                            max={100}
+                            step={1}
+                            suffix="%"
                             style={{ width: "100%" }}
                         />
                     </Col>
@@ -270,7 +270,7 @@ const NewRoomType = ({ fetchRoomTypes, setIsShowModalNewRoomType }) => {
                             Giá Thực Tế Khách Trả (Sau khi giảm giá):
                         </span>
                         <span className="text-xs text-emerald-600">
-                            Niêm yết {formatVND(price)} - Giảm {formatVND(discount)}
+                            Niêm yết {formatVND(price)} - Giảm {discount || 0}%
                         </span>
                     </div>
                     <span className="text-xl font-bold text-emerald-700">

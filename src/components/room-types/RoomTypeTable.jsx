@@ -87,10 +87,10 @@ const RoomTypeTable = ({
             });
             return;
         }
-        if (newDiscount < 0 || newDiscount >= newPrice) {
+        if (newDiscount < 0 || newDiscount > 100) {
             notification.warning({
                 message: "Giảm giá không hợp lệ",
-                description: "Mức giảm giá phải nhỏ hơn giá gốc niêm yết.",
+                description: "Tỷ lệ giảm giá phải từ 0% đến 100%.",
             });
             return;
         }
@@ -246,12 +246,13 @@ const RoomTypeTable = ({
             title: "Giảm giá",
             dataIndex: "discount",
             key: "discount",
-            width: 120,
+            width: 110,
+            align: "center",
             render: (discount) => {
                 const discVal = Number(discount) || 0;
                 return discVal > 0 ? (
-                    <Tag color="error" className="font-medium text-xs">
-                        -{formatVND(discVal)}
+                    <Tag color="error" className="font-semibold text-xs m-0">
+                        -{discVal}%
                     </Tag>
                 ) : (
                     <span className="text-slate-400 text-xs">—</span>
@@ -265,7 +266,7 @@ const RoomTypeTable = ({
             render: (_, record) => {
                 const price = Number(record.price) || 0;
                 const discount = Number(record.discount) || 0;
-                const finalPrice = Math.max(0, price - discount);
+                const finalPrice = Math.max(0, Math.round(price * (1 - discount / 100)));
                 return (
                     <span className="font-bold text-emerald-600 text-sm">
                         {formatVND(finalPrice)}
@@ -395,14 +396,15 @@ const RoomTypeTable = ({
 
                     <div>
                         <label className="text-xs font-semibold text-slate-700 block mb-1">
-                            Số Tiền Giảm Giá (VNĐ):
+                            Tỷ Lệ Giảm Giá (%):
                         </label>
                         <InputNumber
                             value={newDiscount}
                             onChange={(val) => setNewDiscount(Number(val) || 0)}
-                            formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
-                            parser={(value) => value?.replace(/\$\s?|(,*)/g, "")}
-                            step={10000}
+                            min={0}
+                            max={100}
+                            step={1}
+                            suffix="%"
                             style={{ width: "100%" }}
                             size="large"
                         />
@@ -413,7 +415,7 @@ const RoomTypeTable = ({
                             Giá Thực Nhận (Sau giảm):
                         </span>
                         <span className="text-lg font-bold text-emerald-700">
-                            {formatVND(Math.max(0, newPrice - newDiscount))}
+                            {formatVND(Math.max(0, Math.round(newPrice * (1 - (newDiscount || 0) / 100))))}
                         </span>
                     </div>
                 </div>
