@@ -5,7 +5,7 @@ import { Spin } from "antd";
 
 const PrivateRoute = ({ children }) => {
     const accessToken = localStorage.getItem("accessToken") || sessionStorage.getItem("accessToken");
-    const { userInfo, isLoading, listHotel, hotelCurrent } = useContext(globalContext);
+    const { userInfo, isLoading, isCurrentReceptionist } = useContext(globalContext);
 
     if (isLoading) {
         return (
@@ -15,7 +15,7 @@ const PrivateRoute = ({ children }) => {
         );
     }
 
-    if (!accessToken || userInfo?.role !== "ROLE_HOST") {
+    if (!accessToken || (userInfo?.role !== "ROLE_HOST" && userInfo?.role !== "ROLE_RECEPTIONIST")) {
         localStorage.removeItem("accessToken");
         sessionStorage.removeItem("accessToken");
         return (
@@ -23,8 +23,8 @@ const PrivateRoute = ({ children }) => {
         );
     }
 
-    if (listHotel[hotelCurrent]?.staffRole === "ROLE_RECEPTIONIST") {
-        if (window.location.pathname === "/staff") {
+    if (isCurrentReceptionist) {
+        if (window.location.pathname === "/staff" || window.location.pathname.startsWith("/host/staff")) {
             return (
                 <AccessDeniedPage></AccessDeniedPage>
             );

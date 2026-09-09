@@ -267,9 +267,9 @@ const DashboardPage = () => {
                             Mã #{currentHotel.accommodationId}
                         </Tag>
                     </div>
-                    <p className="text-slate-500 text-xs sm:text-sm mt-1">
+                    {/* <p className="text-slate-500 text-xs sm:text-sm mt-1">
                         Trung tâm điều hành doanh thu, lưu trú và phân tích hiệu suất kinh doanh khách sạn.
-                    </p>
+                    </p> */}
                 </div>
 
                 <div className="flex items-center gap-3">

@@ -58,6 +58,32 @@ export const GlobalProvider = ({ children }) => {
         }
     };
 
+    // Xác định role thực tế dựa theo cơ sở đang chọn hoặc "Tất cả cơ sở"
+    const activeRole = useMemo(() => {
+        if (role === "ROLE_ADMIN") return "ROLE_ADMIN";
+
+        // Trường hợp ở trạng thái "Tất cả" (selectedAccommodationId === ""):
+        // Luôn hiển thị thanh điều hướng & quyền của Quản lý (ROLE_MANAGER)
+        if (!selectedAccommodationId) {
+            return "ROLE_MANAGER";
+        }
+
+        // Trường hợp đang chọn 1 cơ sở cụ thể:
+        // Lấy role của nhân sự tại chính cơ sở đó
+        if (currentHotel) {
+            const r = currentHotel.staffRole || currentHotel.role;
+            if (r === "ROLE_RECEPTIONIST" || r === "RECEPTIONIST") {
+                return "ROLE_RECEPTIONIST";
+            }
+            return "ROLE_MANAGER";
+        }
+
+        return "ROLE_MANAGER";
+    }, [selectedAccommodationId, currentHotel, role]);
+
+    const isCurrentManager = activeRole === "ROLE_MANAGER" || activeRole === "ROLE_HOST" || activeRole === "ROLE_ADMIN";
+    const isCurrentReceptionist = activeRole === "ROLE_RECEPTIONIST";
+
     useEffect(() => {
         const token = localStorage.getItem("accessToken") || sessionStorage.getItem("accessToken");
         if (token) {
@@ -141,6 +167,9 @@ export const GlobalProvider = ({ children }) => {
                 currentHotel,
                 hotelCurrent,
                 setHotelCurrent,
+                activeRole,
+                isCurrentManager,
+                isCurrentReceptionist,
                 handleLogout,
                 refreshHotels,
                 initUserData,

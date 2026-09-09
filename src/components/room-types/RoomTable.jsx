@@ -39,15 +39,17 @@ const RoomTable = ({
     setListRoom,
     fetchRoomTypeDetail,
 }) => {
-    const { listHotel, hotelCurrent, role } = useContext(globalContext);
+    const { listHotel, hotelCurrent, role , activeRole} = useContext(globalContext);
     const userRole = role || localStorage.getItem("userRole") || sessionStorage.getItem("userRole");
-    const isManager =
-        userRole === "ROLE_HOST" ||
-        userRole === "HOST" ||
-        userRole === "ROLE_ADMIN" ||
-        userRole === "ROLE_MANAGER" ||
-        listHotel[hotelCurrent]?.staffRole === "ROLE_MANAGER" ||
-        listHotel[hotelCurrent]?.staffRole === "ROLE_HOST";
+    // const isManager =
+    //     userRole === "ROLE_HOST" ||
+    //     userRole === "HOST" ||
+    //     userRole === "ROLE_ADMIN" ||
+    //     userRole === "ROLE_MANAGER" ||
+    //     listHotel[hotelCurrent]?.staffRole === "ROLE_MANAGER" ||
+    //     listHotel[hotelCurrent]?.staffRole === "ROLE_HOST";
+
+    const isManager = activeRole === "ROLE_MANAGER";
 
     const [isShowModalNewRoom, setIsShowModalNewRoom] = useState(false);
     const [isLoadRoom, setIsLoadRoom] = useState(false);
@@ -335,113 +337,113 @@ const RoomTable = ({
         },
         ...(isManager
             ? [
-                  {
-                      title: "Hành động",
-                      key: "action",
-                      width: 130,
-                      align: "center",
-                      render: (_, record) => {
-                          const isDeleted = record.isDeleted || statusFilter === "DELETED";
+                {
+                    title: "Hành động",
+                    key: "action",
+                    width: 130,
+                    align: "center",
+                    render: (_, record) => {
+                        const isDeleted = record.isDeleted || statusFilter === "DELETED";
 
-                          if (isDeleted) {
-                              return (
-                                  <Space size="middle">
-                                      <Tooltip title="Khôi phục phòng này">
-                                          <Popconfirm
-                                              title="Khôi phục phòng vật lý?"
-                                              description={`Khôi phục phòng ${record.roomNumber} về hoạt động bình thường?`}
-                                              onConfirm={() => handleRestoreRoom(record.roomId)}
-                                              okText="Khôi phục"
-                                              cancelText="Hủy"
-                                          >
-                                              <Button
-                                                  type="primary"
-                                                  size="small"
-                                                  icon={<RollbackOutlined />}
-                                                  className="bg-emerald-600 hover:bg-emerald-700 text-xs flex items-center"
-                                              >
-                                                  Khôi phục
-                                              </Button>
-                                          </Popconfirm>
-                                      </Tooltip>
-                                  </Space>
-                              );
-                          }
+                        if (isDeleted) {
+                            return (
+                                <Space size="middle">
+                                    <Tooltip title="Khôi phục phòng này">
+                                        <Popconfirm
+                                            title="Khôi phục phòng vật lý?"
+                                            description={`Khôi phục phòng ${record.roomNumber} về hoạt động bình thường?`}
+                                            onConfirm={() => handleRestoreRoom(record.roomId)}
+                                            okText="Khôi phục"
+                                            cancelText="Hủy"
+                                        >
+                                            <Button
+                                                type="primary"
+                                                size="small"
+                                                icon={<RollbackOutlined />}
+                                                className="bg-emerald-600 hover:bg-emerald-700 text-xs flex items-center"
+                                            >
+                                                Khôi phục
+                                            </Button>
+                                        </Popconfirm>
+                                    </Tooltip>
+                                </Space>
+                            );
+                        }
 
-                          const isCurrentlyActive = record.status !== "INACTIVE";
-                          return (
-                              <Space size="middle">
-                                  {/* Nút Khóa / Mở khóa phòng */}
-                                  <Tooltip
-                                      title={
-                                          isCurrentlyActive
-                                              ? "Khóa phòng (ngừng nhận khách đặt)"
-                                              : "Mở khóa phòng (sẵn sàng đón khách)"
-                                      }
-                                  >
-                                      <Popconfirm
-                                          title={isCurrentlyActive ? "Khóa phòng này?" : "Mở khóa phòng này?"}
-                                          description={
-                                              isCurrentlyActive
-                                                  ? `Khách hàng sẽ không thể đặt phòng ${record.roomNumber} cho đến khi bạn mở khóa lại.`
-                                                  : `Phòng ${record.roomNumber} sẽ sẵn sàng nhận khách đặt.`
-                                          }
-                                          onConfirm={() => handleToggleStatus(record)}
-                                          okText={isCurrentlyActive ? "Khóa phòng" : "Mở khóa"}
-                                          cancelText="Hủy"
-                                      >
-                                          <Button
-                                              type="text"
-                                              size="small"
-                                              className={
-                                                  isCurrentlyActive
-                                                      ? "text-amber-500 hover:text-amber-600"
-                                                      : "text-emerald-600 hover:text-emerald-700"
-                                              }
-                                              icon={
-                                                  isCurrentlyActive ? (
-                                                      <LockOutlined className="text-base" />
-                                                  ) : (
-                                                      <UnlockOutlined className="text-base" />
-                                                  )
-                                              }
-                                          />
-                                      </Popconfirm>
-                                  </Tooltip>
+                        const isCurrentlyActive = record.status !== "INACTIVE";
+                        return (
+                            <Space size="middle">
+                                {/* Nút Khóa / Mở khóa phòng */}
+                                <Tooltip
+                                    title={
+                                        isCurrentlyActive
+                                            ? "Khóa phòng (ngừng nhận khách đặt)"
+                                            : "Mở khóa phòng (sẵn sàng đón khách)"
+                                    }
+                                >
+                                    <Popconfirm
+                                        title={isCurrentlyActive ? "Khóa phòng này?" : "Mở khóa phòng này?"}
+                                        description={
+                                            isCurrentlyActive
+                                                ? `Khách hàng sẽ không thể đặt phòng ${record.roomNumber} cho đến khi bạn mở khóa lại.`
+                                                : `Phòng ${record.roomNumber} sẽ sẵn sàng nhận khách đặt.`
+                                        }
+                                        onConfirm={() => handleToggleStatus(record)}
+                                        okText={isCurrentlyActive ? "Khóa phòng" : "Mở khóa"}
+                                        cancelText="Hủy"
+                                    >
+                                        <Button
+                                            type="text"
+                                            size="small"
+                                            className={
+                                                isCurrentlyActive
+                                                    ? "text-amber-500 hover:text-amber-600"
+                                                    : "text-emerald-600 hover:text-emerald-700"
+                                            }
+                                            icon={
+                                                isCurrentlyActive ? (
+                                                    <LockOutlined className="text-base" />
+                                                ) : (
+                                                    <UnlockOutlined className="text-base" />
+                                                )
+                                            }
+                                        />
+                                    </Popconfirm>
+                                </Tooltip>
 
-                                  {/* Nút Chỉnh sửa */}
-                                  <Tooltip title="Chỉnh sửa số phòng & trạng thái">
-                                      <Button
-                                          type="text"
-                                          size="small"
-                                          icon={<EditOutlined className="text-blue-600 text-base" />}
-                                          onClick={() => handleOpenEditModal(record)}
-                                      />
-                                  </Tooltip>
+                                {/* Nút Chỉnh sửa */}
+                                <Tooltip title="Chỉnh sửa số phòng & trạng thái">
+                                    <Button
+                                        type="text"
+                                        size="small"
+                                        icon={<EditOutlined className="text-blue-600 text-base" />}
+                                        onClick={() => handleOpenEditModal(record)}
+                                    />
+                                </Tooltip>
 
-                                  {/* Nút Xóa mềm phòng */}
-                                  <Tooltip title="Xóa phòng (chuyển vào thùng rác)">
-                                      <Popconfirm
-                                          title="Xác nhận xóa phòng?"
-                                          description={`Bạn có chắc chắn muốn chuyển phòng ${record.roomNumber} vào thùng rác không?`}
-                                          onConfirm={() => handleDeleteRoom(record.roomId)}
-                                          okText="Xóa"
-                                          cancelText="Hủy"
-                                          okButtonProps={{ danger: true }}
-                                      >
-                                          <Button
-                                              type="text"
-                                              danger
-                                              size="small"
-                                              icon={<DeleteOutlined className="text-base" />}
-                                          />
-                                      </Popconfirm>
-                                  </Tooltip>
-                              </Space>
-                          );
-                      },
-                  },
-              ]
+                                {/* Nút Xóa mềm phòng */}
+                                <Tooltip title="Xóa phòng (chuyển vào thùng rác)">
+                                    <Popconfirm
+                                        title="Xác nhận xóa phòng?"
+                                        description={`Bạn có chắc chắn muốn chuyển phòng ${record.roomNumber} vào thùng rác không?`}
+                                        onConfirm={() => handleDeleteRoom(record.roomId)}
+                                        okText="Xóa"
+                                        cancelText="Hủy"
+                                        okButtonProps={{ danger: true }}
+                                    >
+                                        <Button
+                                            type="text"
+                                            danger
+                                            size="small"
+                                            icon={<DeleteOutlined className="text-base" />}
+                                        />
+                                    </Popconfirm>
+                                </Tooltip>
+                            </Space>
+                        );
+                    },
+                },
+            ]
             : []),
     ];
 
@@ -620,4 +622,4 @@ const RoomTable = ({
 };
 
 export default RoomTable;
-
+

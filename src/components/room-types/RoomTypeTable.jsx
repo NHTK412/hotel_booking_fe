@@ -62,15 +62,8 @@ const RoomTypeTable = ({
     fetchRoomTypes,
     isDeletedView = false,
 }) => {
-    const { listHotel, hotelCurrent, role } = useContext(globalContext);
-    const userRole = role || localStorage.getItem("userRole") || sessionStorage.getItem("userRole");
-    const isManager =
-        userRole === "ROLE_HOST" ||
-        userRole === "HOST" ||
-        userRole === "ROLE_ADMIN" ||
-        userRole === "ROLE_MANAGER" ||
-        listHotel[hotelCurrent]?.staffRole === "ROLE_MANAGER" ||
-        listHotel[hotelCurrent]?.staffRole === "ROLE_HOST";
+    const { listHotel, hotelCurrent, isCurrentManager, activeRole } = useContext(globalContext);
+    const isManager = activeRole === "ROLE_MANAGER";
 
     const [isShowRoomTypeDetail, setIsShowRoomTypeDetail] = useState(false);
     const [roomTypeSelected, setRoomTypeSelected] = useState(null);
@@ -387,13 +380,17 @@ const RoomTypeTable = ({
 
                 return (
                     <Space size="small">
-                        <Tooltip title="Cập nhật nhanh giá">
-                            <Button
-                                type="text"
-                                icon={<DollarOutlined className="text-emerald-600 text-base" />}
-                                onClick={() => handleOpenQuickEdit(record)}
-                            />
-                        </Tooltip>
+                        {
+                            isManager && (
+                                <Tooltip title="Cập nhật nhanh giá">
+                                    <Button
+                                        type="text"
+                                        icon={<DollarOutlined className="text-emerald-600 text-base" />}
+                                        onClick={() => handleOpenQuickEdit(record)}
+                                    />
+                                </Tooltip>
+                            )
+                        }
 
                         <Tooltip title="Xem chi tiết & Quản lý phòng vật lý">
                             <Button

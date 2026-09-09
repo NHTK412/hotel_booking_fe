@@ -1,4 +1,4 @@
-import { useContext } from 'react';
+import { useContext, useEffect } from 'react';
 import {
     BookOutlined,
     HomeOutlined,
@@ -12,12 +12,16 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { globalContext } from '../context/GlobalContext';
 
 const Navigation = ({ collapsed }) => {
-    const { listHotel, hotelCurrent, handleLogout } = useContext(globalContext);
+    const { isCurrentReceptionist, handleLogout } = useContext(globalContext);
     const navigate = useNavigate();
     const location = useLocation();
 
-    const currentStaffRole = listHotel[hotelCurrent]?.staffRole;
-    const isReceptionist = currentStaffRole === "ROLE_RECEPTIONIST";
+    // Tự động điều hướng ra khỏi trang quản lý nhân sự nếu cơ sở hiện tại là Lễ tân
+    useEffect(() => {
+        if (isCurrentReceptionist && (location.pathname === '/host/staff' || location.pathname.startsWith('/host/staff'))) {
+            navigate('/host/dashboard', { replace: true });
+        }
+    }, [isCurrentReceptionist, location.pathname, navigate]);
 
     // Menu cho Lễ tân
     const itemsReceptionist = [
@@ -40,7 +44,7 @@ const Navigation = ({ collapsed }) => {
         { key: 'logout', icon: <LogoutOutlined />, label: 'Đăng Xuất', danger: true },
     ];
 
-    const menuItems = isReceptionist ? itemsReceptionist : itemsHost;
+    const menuItems = isCurrentReceptionist ? itemsReceptionist : itemsHost;
 
     const handleMenuClick = (e) => {
         if (e.key === 'logout') {

@@ -6,15 +6,17 @@ import { globalContext } from "../../context/GlobalContext";
 
 const HeaderListRoom = ({ fetchRoomTypes, isLoading }) => {
     const [isShowModalNewRoomType, setIsShowModalNewRoomType] = useState(false);
-    const { listHotel, hotelCurrent, selectedAccommodationId, currentHotel, role } = useContext(globalContext);
+    const { listHotel, hotelCurrent, selectedAccommodationId, currentHotel, role , activeRole} = useContext(globalContext);
     const userRole = role || localStorage.getItem("userRole") || sessionStorage.getItem("userRole");
-    const isManager =
-        userRole === "ROLE_HOST" ||
-        userRole === "HOST" ||
-        userRole === "ROLE_ADMIN" ||
-        userRole === "ROLE_MANAGER" ||
-        currentHotel?.staffRole === "ROLE_MANAGER" ||
-        currentHotel?.staffRole === "ROLE_HOST";
+    // const isManager =
+    //     userRole === "ROLE_HOST" ||
+    //     userRole === "HOST" ||
+    //     userRole === "ROLE_ADMIN" ||
+    //     userRole === "ROLE_MANAGER" ||
+    //     currentHotel?.staffRole === "ROLE_MANAGER" ||
+    //     currentHotel?.staffRole === "ROLE_HOST";
+
+    const isManager = activeRole === "ROLE_MANAGER";
 
     return (
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-slate-100 mb-6">
@@ -33,9 +35,9 @@ const HeaderListRoom = ({ fetchRoomTypes, isLoading }) => {
                         </Tag>
                     )} */}
                 </div>
-                <p className="text-slate-500 text-xs sm:text-sm mt-1">
+                {/* <p className="text-slate-500 text-xs sm:text-sm mt-1">
                     Quản lý các loại phòng nghỉ, chính sách giá niêm yết, ưu đãi giảm giá và tiện nghi phòng.
-                </p>
+                </p> */}
             </div>
 
             <div className="flex items-center gap-3">
@@ -66,7 +68,7 @@ const HeaderListRoom = ({ fetchRoomTypes, isLoading }) => {
                             <span className="text-base font-bold text-slate-800">
                                 Thêm Loại Phòng Mới
                             </span>
-                            
+
                         </div>
                     </div>
                 }

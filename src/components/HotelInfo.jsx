@@ -11,7 +11,7 @@ import { uploadFile } from "../services/UploadFileService";
 import { ACCOMMODATION_TYPE_CONFIG, getAccommodationTypeConfig } from "../config/themeConfig";
 
 const HotelInfo = () => {
-    const { listHotel, hotelCurrent, isLoading } = useContext(globalContext);
+    const { listHotel, hotelCurrent, isLoading, isCurrentManager } = useContext(globalContext);
     const hotel = listHotel?.[hotelCurrent];
 
 
@@ -33,7 +33,7 @@ const HotelInfo = () => {
     const [isShowMap, setIsShowMap] = useState(false);
     const [isLoadingUpdate, setIsLoadingUpdate] = useState(false);
 
-    const isManager = listHotel[hotelCurrent]?.staffRole === "ROLE_MANAGER";
+    const isManager = isCurrentManager;
 
     const hotelTypeOptions = Object.values(ACCOMMODATION_TYPE_CONFIG).map((item) => ({
         value: item.value,

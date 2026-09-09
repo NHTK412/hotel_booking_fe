@@ -2,7 +2,7 @@ import { Select, Tag } from "antd";
 import { ShopOutlined, AppstoreOutlined } from "@ant-design/icons";
 import { useContext } from "react";
 import { globalContext } from "../context/GlobalContext";
-import {ACCOMMODATION_TYPE_CONFIG} from "../config/themeConfig";
+import { ACCOMMODATION_TYPE_CONFIG } from "../config/themeConfig";
 
 const SelectHotel = () => {
     const {
@@ -24,7 +24,7 @@ const SelectHotel = () => {
                         </span>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
-                       
+
                         <Tag color="blue" className="ml-auto text-[10px] m-0 ">
                             {listHotel?.length || 0} Cơ Sở
                         </Tag>

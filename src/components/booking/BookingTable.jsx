@@ -7,6 +7,8 @@ import {
     ClockCircleOutlined,
     CloseCircleOutlined,
     DollarOutlined,
+    LoginOutlined,
+    LogoutOutlined,
 } from "@ant-design/icons";
 import { BOOKING_STATUS_CONFIG } from "../../config/themeConfig";
 
@@ -43,20 +45,33 @@ const BookingTable = ({
         switch (record.status) {
             case "PENDING":
                 return (
+                    // <Space size="small">
+                    //     <Button type="primary" size="small">
+                    //         <CheckCircleOutlined></CheckCircleOutlined>
+                    //     </Button>
+                    //     <Button icon={<CloseCircleOutlined />} size="small">
+                    //         Hủy đơn
+                    //     </Button>
+                    // </Space>
                     <Space size="small">
-                        <Button type="primary" size="small">
-                            Nhận phòng
-                        </Button>
-                        <Button size="small">
-                            Hủy đơn
-                        </Button>
+                        <Tooltip title="Nhận phòng">
+                            <Button type="text" icon={<LoginOutlined className="!text-green-600 !text-base" />} >
+                            </Button>
+                        </Tooltip>
+                        <Tooltip title="Hủy đơn">
+                            <Button type="text" icon={<CloseCircleOutlined className="!text-red-600 !text-base" />} >
+                            </Button>
+                        </Tooltip>
                     </Space>
                 );
             case "CHECKED_IN":
                 return (
-                    <Button danger size="small">
-                        Trả phòng
-                    </Button>
+                    <Space size="small">
+                        <Tooltip title="Trả phòng">
+                            <Button type="text" icon={<LogoutOutlined className="!text-blue-600 !text-base" />} >
+                            </Button>
+                        </Tooltip>
+                    </Space>
                 );
             default:
                 return null;
@@ -65,7 +80,7 @@ const BookingTable = ({
 
     const columns = [
         {
-            title: "Mã đơn",
+            title: "Mã",
             dataIndex: "bookingId",
             key: "bookingId",
             width: 90,
@@ -77,16 +92,38 @@ const BookingTable = ({
             ),
         },
         {
-            title: "Khách hàng",
-            key: "customer",
+            title: "Tên khách hàng",
+            key: "customerName",
             width: 200,
             render: (_, record) => (
                 <div className="flex flex-col">
                     <span className="font-bold text-slate-800 text-sm">
                         {record.customerName || "Khách vãng lai"}
                     </span>
-                    <span className="text-xs text-slate-500">{record.customerPhone || "—"}</span>
-                    <span className="text-[11px] text-slate-400 truncate">{record.customerEmail || "—"}</span>
+                </div>
+            ),
+        },
+        {
+            title: "Số điện thoại",
+            dataIndex: "customerPhone",
+            key: "customerPhone",
+            width: 150,
+            render: (phone, _) => (
+                <div className="flex flex-col">
+
+                    <span className="text-xs text-slate-500">{phone || "—"}</span>
+                </div>
+            ),
+        },
+        {
+            title: "Email",
+            dataIndex: "customerEmail",
+            key: "customerEmail",
+            width: 200,
+            render: (email, _) => (
+                <div className="flex flex-col">
+                    <span className="text-xs text-slate-500">{email || "—"}</span>
+
                 </div>
             ),
         },

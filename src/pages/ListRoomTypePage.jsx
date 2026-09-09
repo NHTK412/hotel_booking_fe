@@ -220,7 +220,7 @@ const ListRoomTypePage = () => {
                                 label: (
                                     <span className="flex items-center gap-1.5 font-semibold">
                                         <DeleteOutlined className="text-rose-500" />
-                                        Đã xóa (Thùng rác)
+                                        Đã xóa
                                     </span>
                                 ),
                             },

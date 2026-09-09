@@ -6,11 +6,11 @@ import UserInfo from "../components/UserInfo";
 import { globalContext } from "../context/GlobalContext";
 
 const UserPage = () => {
-    const { role } = useContext(globalContext);
+    const { role, selectedAccommodationId } = useContext(globalContext);
     const location = useLocation();
 
     // Tài khoản Admin quản trị toàn sàn nên không hiển thị khối thông tin khách sạn
-    const isAdmin = role === "ROLE_ADMIN" || location.pathname.startsWith("/admin");
+    const isAdmin = role === "ROLE_ADMIN" || location.pathname.startsWith("/admin") || selectedAccommodationId === "";
 
     return (
         <div className="flex flex-col space-y-10">

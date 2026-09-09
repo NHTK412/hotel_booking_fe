@@ -20,13 +20,11 @@ const HostLayout = () => {
     const {
         userInfo,
         listHotel,
-        hotelCurrent,
-        setHotelCurrent,
+        selectedAccommodationId,
+        currentHotel,
+        isCurrentReceptionist,
         handleLogout
     } = useContext(globalContext);
-
-    const currentHotel = listHotel?.[hotelCurrent];
-    const staffRole = currentHotel?.staffRole || "ROLE_HOST";
 
     return (
         <Layout style={{ minHeight: "100vh" }}>
@@ -41,17 +39,25 @@ const HostLayout = () => {
                 className="border-r border-slate-200"
             >
                 <div className="flex items-center justify-center h-16 border-b border-slate-100 gap-2 px-3">
-                    <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-sm">
+                    <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-sm shrink-0">
                         <ShopOutlined />
                     </div>
                     {!collapsed && (
                         <div className="flex flex-col overflow-hidden">
                             <span className="font-bold text-slate-800 text-sm tracking-wide truncate">
-                                {currentHotel?.accommodationName || "Tất Cả Cơ Sở"}
+                                {selectedAccommodationId && currentHotel ? currentHotel.accommodationName : "Tất Cả Cơ Sở"}
                             </span>
-                            <span className="text-[10px] text-blue-600 font-semibold uppercase tracking-wider">
-                                {currentHotel ? "Cơ Sở Đang Chọn" : "Quản Trị Đa Cơ Sở"}
-                            </span>
+                            <div className="flex items-center gap-1 mt-0.5">
+                                {isCurrentReceptionist ? (
+                                    <Tag color="orange" className="text-[10px] leading-[16px] px-1.5 py-0 m-0 font-medium">
+                                        LỄ TÂN
+                                    </Tag>
+                                ) : (
+                                    <Tag color="blue" className="text-[10px] leading-[16px] px-1.5 py-0 m-0 font-medium">
+                                        {!selectedAccommodationId ? "QUẢN LÝ TẤT CẢ" : "QUẢN LÝ"}
+                                    </Tag>
+                                )}
+                            </div>
                         </div>
                     )}
                 </div>
@@ -77,9 +83,15 @@ const HostLayout = () => {
                     </div>
 
                     <div className="flex items-center gap-4">
-                        <Tag color="geekblue" className="font-semibold px-2 py-0.5">
-                            {staffRole === "ROLE_RECEPTIONIST" ? "LỄ TÂN" : "CHỦ KHÁCH SẠN"}
-                        </Tag>
+                        {isCurrentReceptionist ? (
+                            <Tag color="orange" className="font-semibold px-2.5 py-1 text-xs">
+                                LỄ TÂN
+                            </Tag>
+                        ) : (
+                            <Tag color="geekblue" className="font-semibold px-2.5 py-1 text-xs">
+                                {!selectedAccommodationId ? "QUẢN TRỊ TẤT CẢ CƠ SỞ" : "QUẢN LÝ"}
+                            </Tag>
+                        )}
 
                         <div className="flex items-center gap-2">
                             <Avatar

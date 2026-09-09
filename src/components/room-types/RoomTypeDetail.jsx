@@ -22,15 +22,8 @@ const RoomTypeDetail = ({ isShow, setIsShow, roomTypeSelected, onUpdate }) => {
         { label: "Bao gồm bữa sáng", value: "BREAKFAST_INCLUDED" }
     ];
 
-    const { listHotel, hotelCurrent, role } = useContext(globalContext);
-    const userRole = role || localStorage.getItem("userRole") || sessionStorage.getItem("userRole");
-    const isManager =
-        userRole === "ROLE_HOST" ||
-        userRole === "HOST" ||
-        userRole === "ROLE_ADMIN" ||
-        userRole === "ROLE_MANAGER" ||
-        listHotel[hotelCurrent]?.staffRole === "ROLE_MANAGER" ||
-        listHotel[hotelCurrent]?.staffRole === "ROLE_HOST";
+    const { listHotel, hotelCurrent, isCurrentManager } = useContext(globalContext);
+    const isManager = isCurrentManager;
 
     const [activeTab, setActiveTab] = useState("info");
     const [name, setName] = useState("");

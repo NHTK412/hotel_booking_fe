@@ -250,7 +250,7 @@ const StaffTable = ({
                         pageSizeOptions: ['1', '5', '10', '20', '50'],
                         current: currentPage + 1,
                         pageSize: currentPageSize,
-                        total: staffPage.page.totalPages,
+                        total: staffPage?.page?.totalElements || (staffPage?.page?.totalPages * currentPageSize) || 0,
                         onChange: (page, pageSize) => {
                             setCurrentPage(page - 1);
                             setCurrentPageSize(pageSize);

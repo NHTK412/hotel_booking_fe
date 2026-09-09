@@ -113,7 +113,7 @@ const BookingPage = () => {
                         <h1 className="text-2xl font-bold text-slate-800 m-0">
                             Quản Lý Đơn Đặt Phòng
                         </h1>
-                        {currentHotel ? (
+                        {/* {currentHotel ? (
                             <Tag color="blue" className="font-semibold text-xs m-0">
                                 #{currentHotel.accommodationId} - {currentHotel.accommodationName}
                             </Tag>
@@ -121,11 +121,11 @@ const BookingPage = () => {
                             <Tag color="geekblue" className="font-semibold text-xs m-0">
                                 Tất Cả Cơ Sở ({listHotel?.length || 0})
                             </Tag>
-                        )}
+                        )} */}
                     </div>
-                    <p className="text-slate-500 text-xs sm:text-sm mt-1">
+                    {/* <p className="text-slate-500 text-xs sm:text-sm mt-1">
                         Theo dõi danh sách khách lưu trú, thời gian nhận/trả phòng và trạng thái thanh toán.
-                    </p>
+                    </p> */}
                 </div>
 
                 <Button
