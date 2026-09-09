@@ -51,8 +51,9 @@ const formatVND = (value) => {
 };
 
 const DashboardPage = () => {
-    const { listHotel, hotelCurrent } = useContext(globalContext);
-    const currentHotel = listHotel?.[hotelCurrent];
+    const { listHotel, currentHotel: contextHotel, selectedAccommodationId } = useContext(globalContext);
+    // Nếu chọn Tất cả cơ sở, tự động hiển thị cơ sở đầu tiên cho báo cáo số liệu
+    const currentHotel = contextHotel || listHotel?.[0] || null;
 
     // Năm phân tích biểu đồ tháng
     const [selectedYear, setSelectedYear] = useState(dayjs().year());
@@ -238,9 +239,9 @@ const DashboardPage = () => {
                     image={<ShopOutlined style={{ fontSize: 56, color: "#94a3b8" }} />}
                     description={
                         <div className="space-y-1">
-                            <h3 className="text-base font-bold text-slate-700">Chưa chọn cơ sở lưu trú</h3>
+                            <h3 className="text-base font-bold text-slate-700">Chưa có cơ sở lưu trú</h3>
                             <p className="text-slate-500 text-xs">
-                                Vui lòng chọn một khách sạn hoặc homestay từ thanh điều hướng trên cùng để xem báo cáo doanh thu.
+                                Tài khoản của bạn hiện chưa được phân công phụ trách cơ sở lưu trú nào để thống kê doanh thu.
                             </p>
                         </div>
                     }

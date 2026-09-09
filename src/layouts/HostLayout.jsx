@@ -47,10 +47,10 @@ const HostLayout = () => {
                     {!collapsed && (
                         <div className="flex flex-col overflow-hidden">
                             <span className="font-bold text-slate-800 text-sm tracking-wide truncate">
-                                {currentHotel?.accommodationName || "HOTEL HOST"}
+                                {currentHotel?.accommodationName || "Tất Cả Cơ Sở"}
                             </span>
                             <span className="text-[10px] text-blue-600 font-semibold uppercase tracking-wider">
-                                Quản Lý Cơ Sở
+                                {currentHotel ? "Cơ Sở Đang Chọn" : "Quản Trị Đa Cơ Sở"}
                             </span>
                         </div>
                     )}
@@ -72,11 +72,7 @@ const HostLayout = () => {
                             className="text-slate-600 hover:text-blue-700"
                         />
                         {listHotel && listHotel.length > 0 && (
-                            <SelectHotel
-                                hotelList={listHotel}
-                                hotelCurrent={hotelCurrent}
-                                setHotelCurrent={setHotelCurrent}
-                            />
+                            <SelectHotel />
                         )}
                     </div>
 

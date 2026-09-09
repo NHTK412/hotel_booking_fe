@@ -11,7 +11,7 @@ const getUserInfo = async () => {
 
 const getListHotel = async () => {
     try {
-        const response = await axios.get("/accommodations/user/me");
+        const response = await axios.get("/accommodations/my");
         return response;
     } catch (error) {
         throw error;

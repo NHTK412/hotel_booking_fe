@@ -1,264 +1,266 @@
-import { DeleteOutlined } from "@ant-design/icons";
-import { Button, Input, Modal, notification, Spin, Table, Tag } from "antd";
+import { DeleteOutlined, PlusOutlined, CheckCircleOutlined, CloseCircleOutlined } from "@ant-design/icons";
+import { Button, Input, Modal, notification, Spin, Table, Tag, Popconfirm, Space } from "antd";
 import { useContext, useState } from "react";
-import { createMultipleRooms, updateStatusRoom } from "../../services/RoomService";
+import { createMultipleRooms, deleteMultipleRooms } from "../../services/RoomService";
 import { globalContext } from "../../context/GlobalContext";
+
 const RoomTable = ({
     currentRoomType,
     listRoom,
     setListRoom,
-    fetchRoomTypeDetail
+    fetchRoomTypeDetail,
 }) => {
-
     const { listHotel, hotelCurrent } = useContext(globalContext);
+    const userRole = localStorage.getItem("userRole") || sessionStorage.getItem("userRole");
+    const isManager =
+        listHotel[hotelCurrent]?.staffRole === "ROLE_MANAGER" ||
+        listHotel[hotelCurrent]?.staffRole === "ROLE_HOST" ||
+        userRole === "HOST";
 
+    const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+    const [isShowModalNewRoom, setIsShowModalNewRoom] = useState(false);
+    const [isLoadRoom, setIsLoadRoom] = useState(false);
+    const [inputs, setInputs] = useState([""]);
 
-    const statusRoom = [
-        {
-            value: "ACTIVE",
-            label: "Hoạt động",
-            color: "green"
-        },
-        {
-            value: "DELETED",
-            label: "Đã xóa",
-            color: "red"
-        },
-        {
-            value: "INACTIVE",
-            label: "Không hoạt động",
-            color: "yellow"
+    const handleDeleteRooms = async (roomIds) => {
+        if (!roomIds || roomIds.length === 0) return;
+        try {
+            setIsLoadRoom(true);
+            await deleteMultipleRooms(currentRoomType.roomtypeId, roomIds);
+            notification.success({
+                message: "Thành công",
+                description: `Đã xóa ${roomIds.length} phòng thành công.`,
+            });
+            setSelectedRowKeys([]);
+            fetchRoomTypeDetail(currentRoomType.roomtypeId);
+        } catch (error) {
+            console.error("Lỗi khi xóa phòng:", error);
+            notification.error({
+                message: "Lỗi",
+                description: error?.response?.data?.message || "Đã có lỗi xảy ra khi xóa phòng.",
+            });
+        } finally {
+            setIsLoadRoom(false);
         }
-    ]
+    };
+
+    const handleNewRoom = async () => {
+        const validNumbers = inputs.map((num) => num?.trim()).filter(Boolean);
+        if (validNumbers.length === 0) {
+            notification.warning({
+                message: "Thông tin không hợp lệ",
+                description: "Vui lòng nhập ít nhất một số phòng.",
+            });
+            return;
+        }
+
+        try {
+            setIsLoadRoom(true);
+            await createMultipleRooms(currentRoomType.roomtypeId, {
+                roomNumbers: validNumbers,
+            });
+
+            notification.success({
+                message: "Thành công",
+                description: `Đã thêm ${validNumbers.length} phòng mới thành công.`,
+            });
+
+            setIsShowModalNewRoom(false);
+            setInputs([""]);
+            fetchRoomTypeDetail(currentRoomType.roomtypeId);
+        } catch (error) {
+            console.error("Lỗi khi thêm phòng:", error);
+            notification.error({
+                message: "Lỗi",
+                description: error?.response?.data?.message || "Đã có lỗi xảy ra khi thêm phòng mới.",
+            });
+        } finally {
+            setIsLoadRoom(false);
+        }
+    };
+
+    const handleDeleteInput = (index) => {
+        const newInputs = [...inputs];
+        newInputs.splice(index, 1);
+        setInputs(newInputs.length > 0 ? newInputs : [""]);
+    };
+
+    const handleChange = (value, index) => {
+        const newInputs = [...inputs];
+        newInputs[index] = value;
+        setInputs(newInputs);
+    };
 
     const columns = [
         {
             title: "Mã phòng",
             dataIndex: "roomId",
             key: "roomId",
-            width: "25%",
-            render: (text) => <span className="font-semibold text-gray-900">#{text}</span>
+            width: 100,
+            align: "center",
+            render: (text) => (
+                <span className="font-mono text-xs font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                    #{text}
+                </span>
+            ),
         },
         {
             title: "Số phòng",
             dataIndex: "roomNumber",
             key: "roomNumber",
-            width: "25%",
-            render: (text) => <span className="font-medium text-gray-800">{text}</span>
+            render: (text) => <span className="font-bold text-slate-800 text-sm">{text}</span>,
         },
         {
             title: "Trạng thái",
-            dataIndex: "status",
-            key: "status",
-            width: "25%",
-            render: (status) => {
-                const statusConfig = statusRoom.find((s) => s.value === status);
-                return (
-                    <Tag color={statusConfig?.color} className="text-xs">
-                        {statusConfig?.label}
+            dataIndex: "isDeleted",
+            key: "isDeleted",
+            width: 150,
+            align: "center",
+            render: (isDeleted) =>
+                isDeleted ? (
+                    <Tag icon={<CloseCircleOutlined />} color="error">
+                        Đã xóa
                     </Tag>
-                );
-            }
+                ) : (
+                    <Tag icon={<CheckCircleOutlined />} color="success">
+                        Đang hoạt động
+                    </Tag>
+                ),
         },
-        ...(listHotel[hotelCurrent]?.staffRole === 'ROLE_MANAGER' ? [
-            {
-                title: "Hành động",
-                key: "action",
-                width: "25%",
-                render: (_, record) =>
-                    <>
-                        {
-                            listHotel[hotelCurrent]?.staffRole === 'ROLE_MANAGER' && (
-                                record.status === "ACTIVE" ? (
-                                    <>
-                                        <Button color="default" variant="filled" onClick={() => handleUpdateStatusRoom(record.roomId, "INACTIVE")}>
-                                            Bảo trì
-                                        </Button>
-                                        <Button color="danger" variant="filled" className="ml-2" onClick={() => handleUpdateStatusRoom(record.roomId, "DELETED")}>
-                                            Xóa
-                                        </Button>
-                                    </>)
-                                    : record.status === "INACTIVE" ? (
-                                        <>
-                                            <Button color="danger" variant="filled" onClick={() => handleUpdateStatusRoom(record.roomId, "DELETED")}>
-                                                Xóa
-                                            </Button>
-                                            <Button color="primary" variant="filled" className="ml-2" onClick={() => handleUpdateStatusRoom(record.roomId, "ACTIVE")}>
-                                                Khôi phục
-                                            </Button>
-                                        </>
-                                    ) : (
-                                        <Button color="primary" variant="filled" onClick={() => handleUpdateStatusRoom(record.roomId, "ACTIVE")}>
-                                            Khôi phục
-                                        </Button>
-                                    )
-                            )
-                        }
-                    </>
-            }
-        ] : [])
+        ...(isManager
+            ? [
+                  {
+                      title: "Hành động",
+                      key: "action",
+                      width: 110,
+                      align: "center",
+                      render: (_, record) => (
+                          <Popconfirm
+                              title="Xóa phòng này?"
+                              description={`Bạn có chắc muốn xóa phòng ${record.roomNumber}?`}
+                              onConfirm={() => handleDeleteRooms([record.roomId])}
+                              okText="Xóa"
+                              cancelText="Hủy"
+                              okButtonProps={{ danger: true }}
+                          >
+                              <Button
+                                  type="text"
+                                  danger
+                                  size="small"
+                                  icon={<DeleteOutlined />}
+                              >
+                                  Xóa
+                              </Button>
+                          </Popconfirm>
+                      ),
+                  },
+              ]
+            : []),
     ];
 
-
-
-    const [isShowModalNewRoom, setIsShowModalNewRoom] = useState(false);
-    const [isLoadRoom, setIsLoadRoom] = useState(false);
-    const [inputs, setInputs] = useState([""]);
-
-
-    const handleNewRoom = async () => {
-        try {
-            setIsLoadRoom(true);
-            const data =
-            {
-                "roomNumbers": inputs
-            }
-                ;
-
-            const reponse = await createMultipleRooms(currentRoomType.roomtypeId, data);
-
-            notification.success(
-                {
-                    title: "Thành công",
-                    description: "Đã thêm phòng mới thành công.",
-                }
-            )
-
-            setIsShowModalNewRoom(false);
-            setInputs([""]);
-            fetchRoomTypeDetail(currentRoomType.roomtypeId);
-        } catch (error) {
-            notification.error(
-                {
-                    title: "Lỗi",
-                    description: "Đã có lỗi xảy ra khi thêm phòng mới. Vui lòng thử lại sau.",
-                }
-            )
-        }
-        finally {
-            setIsLoadRoom(false);
-        }
-    }
-
-    const handleDeleteInput = (index) => {
-        const newInputs = [...inputs];
-        newInputs.splice(index, 1);
-        setInputs(newInputs);
-    }
-
-    const handleChange = (value, index) => {
-        const newInputs = [...inputs];
-        newInputs[index] = value;
-        setInputs(newInputs);
-    }
-
-    const handleUpdateStatusRoom = async (roomId, status) => {
-        try {
-            setIsLoadRoom(true);
-            await updateStatusRoom(currentRoomType.roomtypeId, roomId, status);
-            notification.success(
-                {
-                    title: "Thành công",
-                    description: "Cập nhật trạng thái phòng thành công.",
-                }
-            )
-            fetchRoomTypeDetail(currentRoomType.roomtypeId);
-        } catch (error) {
-            notification.error(
-                {
-                    title: "Lỗi",
-                    description: "Đã có lỗi xảy ra khi cập nhật trạng thái phòng. Vui lòng thử lại sau.",
-                }
-            )
-        }
-        finally {
-            setIsLoadRoom(false);
-        }
-    }
-
-
+    const rowSelection = isManager
+        ? {
+              selectedRowKeys,
+              onChange: (keys) => setSelectedRowKeys(keys),
+          }
+        : undefined;
 
     return (
-        <>
-            <Spin spinning={isLoadRoom} >
-                <div className="flex flex-row justify-between">
-                    <h3 className="text-xl font-semibold mb-4">Danh sách phòng thuộc loại phòng</h3>
-                    {
-                        listHotel[hotelCurrent]?.staffRole === 'ROLE_MANAGER' && (
-                            <Button type="primary" onClick={() => setIsShowModalNewRoom(true)} loading={isLoadRoom}>
-                                Thêm phòng
-                            </Button>
-                        )
-                    }
+        <Spin spinning={isLoadRoom}>
+            <div className="flex flex-row items-center justify-between mb-4">
+                <div>
+                    <h3 className="text-lg font-bold text-slate-800 m-0">
+                        Danh sách phòng vật lý
+                    </h3>
+                    <span className="text-xs text-slate-500">
+                        Tổng cộng {listRoom?.length || 0} phòng vật lý gán vào loại phòng này
+                    </span>
                 </div>
-                <Table
-                    columns={columns}
-                    dataSource={listRoom}
-                    pagination={false}
-                    rowKey="roomId"
-                >
-                </Table>
-                <Modal
-                    title="Thêm phòng mới"
-                    open={isShowModalNewRoom}
-                    onCancel={() => {
-                        setIsShowModalNewRoom(false);
-                        setInputs([""]);
-                    }}
-                    onOk={() => {
-                        if (inputs.some(input => !input.trim())) {
-                            notification.error({
-                                title: "Lỗi",
-                                description: "Vui lòng điền đầy đủ thông tin cho tất cả phòng mới.",
-                            });
-                            return;
-                        }
-                        // alert("Thêm phòng mới: " + inputs.join(", "))
-                        handleNewRoom();
-                    }}
-                    okText="Thêm"
-                    cancelText="Hủy"
-                    styles={{
-                        body: {
-                            maxHeight: "80vh",
-                            overflowY: "auto"
-                        },
-                    }}
-                >
-                    <Spin spinning={isLoadRoom}>
-                        <div className="flex flex-col space-y-4 mb-5">
-                            {
-                                inputs.map((item, index) => (
-                                    <div className="flex flex-row items-center justify-between space-x-4" key={index}>
-                                        <span className=" font-medium text-gray-700">Phòng mới {index + 1}:</span>
-                                        <Input
-                                            className="flex-1"
-                                            key={index}
-                                            value={item}
-                                            status={!item?.trim() ? "error" : ""}
-                                            onChange={(e) =>
-                                                handleChange(e.target.value, index)
-                                            }
-                                        // style={{ width: "80%" }}
-                                        />
-                                        <Button className="ml-5" color="danger" variant="outlined" onClick={() => handleDeleteInput(index)}>
-                                            <DeleteOutlined></DeleteOutlined>
-                                        </Button>
-                                    </div>
-
-                                ))
-                            }
-                        </div>
-
-                        <Button onClick={() => setInputs([...inputs, ""])}>
-                            Thêm
+                {isManager && (
+                    <Space>
+                        {selectedRowKeys.length > 0 && (
+                            <Popconfirm
+                                title={`Xóa ${selectedRowKeys.length} phòng đã chọn?`}
+                                onConfirm={() => handleDeleteRooms(selectedRowKeys)}
+                                okText="Xóa"
+                                cancelText="Hủy"
+                                okButtonProps={{ danger: true }}
+                            >
+                                <Button danger icon={<DeleteOutlined />}>
+                                    Xóa {selectedRowKeys.length} phòng
+                                </Button>
+                            </Popconfirm>
+                        )}
+                        <Button
+                            type="primary"
+                            icon={<PlusOutlined />}
+                            onClick={() => setIsShowModalNewRoom(true)}
+                        >
+                            Thêm phòng
                         </Button>
-                    </Spin>
+                    </Space>
+                )}
+            </div>
 
-                </Modal>
-            </Spin>
-        </>
-    )
-}
+            <Table
+                rowSelection={rowSelection}
+                columns={columns}
+                dataSource={listRoom || []}
+                pagination={{ pageSize: 8, showSizeChanger: false }}
+                rowKey="roomId"
+                size="small"
+            />
 
-export default RoomTable;
+            <Modal
+                title="Thêm phòng vật lý mới"
+                open={isShowModalNewRoom}
+                onCancel={() => {
+                    setIsShowModalNewRoom(false);
+                    setInputs([""]);
+                }}
+                onOk={handleNewRoom}
+                okText="Thêm tất cả"
+                cancelText="Hủy"
+                destroyOnClose
+            >
+                <div className="space-y-3 py-2">
+                    <p className="text-xs text-slate-500 mb-2">
+                        Nhập các số phòng thực tế (Ví dụ: 101, 102, 201...) để tạo hàng loạt vào loại phòng:
+                    </p>
+                    {inputs.map((item, index) => (
+                        <div className="flex items-center gap-2" key={index}>
+                            <span className="text-xs font-semibold text-slate-600 w-16">
+                                Phòng #{index + 1}:
+                            </span>
+                            <Input
+                                className="flex-1"
+                                placeholder={`Ví dụ: ${100 + index + 1}`}
+                                value={item}
+                                onChange={(e) => handleChange(e.target.value, index)}
+                            />
+                            {inputs.length > 1 && (
+                                <Button
+                                    type="text"
+                                    danger
+                                    icon={<DeleteOutlined />}
+                                    onClick={() => handleDeleteInput(index)}
+                                />
+                            )}
+                        </div>
+                    ))}
+
+                    <Button
+                        type="dashed"
+                        block
+                        icon={<PlusOutlined />}
+                        onClick={() => setInputs([...inputs, ""])}
+                    >
+                        Thêm ô nhập số phòng
+                    </Button>
+                </div>
+            </Modal>
+        </Spin>
+    );
+};
+
+export default RoomTable;

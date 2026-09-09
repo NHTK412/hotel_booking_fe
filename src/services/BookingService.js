@@ -150,8 +150,34 @@ const getTodayCheckins = async (accommodationId) => {
     }
 };
 
+/**
+ * Lấy danh sách đơn đặt phòng của Host (Chọn cơ sở hoặc tất cả cơ sở, hỗ trợ lọc theo trạng thái)
+ * GET /bookings/host?accommodationId={accommodationId}&status={status}&page={page}&size={size}
+ */
+const getHostBookings = async ({
+    accommodationId,
+    status,
+    page = 0,
+    size = 10
+} = {}) => {
+    try {
+        const params = { page, size };
+        if (accommodationId !== undefined && accommodationId !== null && accommodationId !== "") {
+            params.accommodationId = accommodationId;
+        }
+        if (status) {
+            params.status = status;
+        }
+        const response = await axios.get("/bookings/host", { params });
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};
+
 export {
     getListBooking,
+    getHostBookings,
     getBookingMonthReport,
     getTodayRevenue,
     getMonthRevenue,
@@ -165,4 +191,4 @@ export {
     getBookingStatistics,
     getTodayGuests,
     getTodayCheckins,
-};
+};

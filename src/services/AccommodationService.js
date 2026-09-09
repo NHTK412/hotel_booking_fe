@@ -52,9 +52,15 @@ const searchAccommodations = async ({ keyword, page = 0, size = 10 }) => {
     );
 };
 
+// Lấy danh sách các cơ sở lưu trú của Host đang đăng nhập
+const getMyAccommodations = async () => {
+    return await axios.get("/accommodations/my");
+};
+
 export {
     getAllAccommodations,
     getAccommodationById,
+    getMyAccommodations,
     createAccommodation,
     updateAccommodation,
     deleteAccommodation,

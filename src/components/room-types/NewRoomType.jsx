@@ -1,198 +1,366 @@
-import { Button, Checkbox, Input, notification, Spin, Upload } from "antd";
-import TextArea from "antd/es/input/TextArea";
-import { useContext, useState } from "react";
-import { uploadFileMultiple, uploadFile } from "../../services/UploadFileService";
-import { globalContext } from "../../context/GlobalContext";
+import { useState, useContext } from "react";
+import {
+    Button,
+    Checkbox,
+    Input,
+    InputNumber,
+    Upload,
+    Spin,
+    notification,
+    Row,
+    Col,
+    Divider,
+    Alert,
+    Select,
+} from "antd";
+import {
+    UploadOutlined,
+    PlusOutlined,
+    DollarOutlined,
+    WifiOutlined,
+    UserOutlined,
+    HomeOutlined,
+    ShopOutlined,
+} from "@ant-design/icons";
+import { uploadFile, uploadFileMultiple } from "../../services/UploadFileService";
 import { createRoomType } from "../../services/RoomService";
+import { globalContext } from "../../context/GlobalContext";
 
-const NewRoomType = ({
-    fetchRoomTypes,
-    setIsShowModalNewRoomType
-}) => {
+const { TextArea } = Input;
 
-    const Amenityoptions = [
-        { label: "WiFi", value: "WIFI" },
-        { label: "Điều hòa", value: "AIR_CONDITIONING" },
-        { label: "TV", value: "TV" },
-        { label: "Mini bar", value: "MINI_BAR" },
-        { label: "Dịch vụ phòng", value: "ROOM_SERVICE" },
-        { label: "Hồ bơi", value: "SWIMMING_POOL" },
-        { label: "Phòng gym", value: "GYM" },
-        { label: "Spa", value: "SPA" },
-        { label: "Bãi đỗ xe", value: "PARKING" },
-        { label: "Bao gồm bữa sáng", value: "BREAKFAST_INCLUDED" }
-    ];
+const formatVND = (value) => {
+    return new Intl.NumberFormat("vi-VN", {
+        style: "currency",
+        currency: "VND",
+    }).format(value || 0);
+};
+
+const AMENITY_OPTIONS = [
+    { label: "WiFi Tốc Độ Cao", value: "WIFI" },
+    { label: "Điều Hòa Không Khí", value: "AIR_CONDITIONING" },
+    { label: "Smart TV", value: "TV" },
+    { label: "Tủ Lạnh / Mini Bar", value: "MINI_BAR" },
+    { label: "Dịch Vụ Phòng", value: "ROOM_SERVICE" },
+    { label: "Hồ Bơi", value: "SWIMMING_POOL" },
+    { label: "Phòng Gym", value: "GYM" },
+    { label: "Spa / Massage", value: "SPA" },
+    { label: "Bãi Đỗ Xe", value: "PARKING" },
+    { label: "Bao Gồm Bữa Sáng", value: "BREAKFAST_INCLUDED" },
+];
+
+const NewRoomType = ({ fetchRoomTypes, setIsShowModalNewRoomType }) => {
+    const { listHotel, selectedAccommodationId } = useContext(globalContext);
 
     const [isLoading, setIsLoading] = useState(false);
+    const [targetAccommodationId, setTargetAccommodationId] = useState(() => {
+        return selectedAccommodationId ? Number(selectedAccommodationId) : (listHotel?.[0]?.accommodationId || null);
+    });
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");
-    const [price, setPrice] = useState(0);
-    const [numberOfBedrooms, setNumberOfBedrooms] = useState(0);
-    const [maxGuests, setMaxGuests] = useState(0);
+    const [price, setPrice] = useState(1000000);
+    const [discount, setDiscount] = useState(0);
+    const [numberOfBedrooms, setNumberOfBedrooms] = useState(1);
+    const [maxGuests, setMaxGuests] = useState(2);
     const [mainImage, setMainImage] = useState(null);
     const [otherImages, setOtherImages] = useState([]);
-    const [amenities, setAmenities] = useState([]);
+    const [amenities, setAmenities] = useState(["WIFI", "AIR_CONDITIONING"]);
 
-    const { listHotel, hotelCurrent } = useContext(globalContext);
+    const handleCreateRoomType = async () => {
+        if (!targetAccommodationId) {
+            notification.warning({
+                message: "Thiếu thông tin",
+                description: "Vui lòng chọn cơ sở lưu trú cho loại phòng mới.",
+            });
+            return;
+        }
 
+        if (!name.trim()) {
+            notification.warning({
+                message: "Thiếu thông tin",
+                description: "Vui lòng nhập tên loại phòng.",
+            });
+            return;
+        }
 
-    const handelNewRoomType = async () => {
+        if (!price || price <= 0) {
+            notification.warning({
+                message: "Giá phòng không hợp lệ",
+                description: "Giá niêm yết phải lớn hơn 0 VNĐ.",
+            });
+            return;
+        }
+
+        if (discount < 0 || discount >= price) {
+            notification.warning({
+                message: "Giảm giá không hợp lệ",
+                description: "Mức giảm giá phải nhỏ hơn giá niêm yết ban đầu.",
+            });
+            return;
+        }
+
+        if (!mainImage) {
+            notification.warning({
+                message: "Thiếu ảnh đại diện",
+                description: "Vui lòng tải lên ảnh bìa đại diện cho loại phòng.",
+            });
+            return;
+        }
+
         try {
             setIsLoading(true);
 
-            if (!name.trim() || price === 0) {
-                notification.error({
-                    title: "Lỗi",
-                    description: "Vui lòng nhập đầy đủ thông tin và giá phòng"
-                });
-                return;
-            }
-
+            // 1. Upload ảnh chính
             const uploadMainResponse = await uploadFile(mainImage);
-            const mainPath = uploadMainResponse.data.filePath;
+            const mainPath = uploadMainResponse?.data?.filePath || uploadMainResponse?.filePath;
 
+            // 2. Upload các ảnh phụ (nếu có)
             let otherPaths = [];
             if (otherImages.length > 0) {
                 const uploadOtherResponses = await uploadFileMultiple(otherImages);
-                otherPaths = uploadOtherResponses.data.map((res) => res.filePath);
+                const rawList = uploadOtherResponses?.data || uploadOtherResponses || [];
+                if (Array.isArray(rawList)) {
+                    otherPaths = rawList.map((res) => res.filePath || res);
+                }
             }
 
-
-            const data = {
-                name,
-                price,
-                discount: 0.0,
-                imagesPreview: otherPaths,
+            const payload = {
+                name: name.trim(),
+                price: Number(price),
+                discount: Number(discount) || 0,
                 image: mainPath,
+                imagesPreview: otherPaths,
                 amenities: amenities,
-                accommodationId: listHotel[hotelCurrent].accommodationId,
-                capacity: maxGuests,
-                bedroom: numberOfBedrooms,
-                description
+                accommodationId: Number(targetAccommodationId),
+                capacity: Number(maxGuests) || 2,
+                bedroom: Number(numberOfBedrooms) || 1,
+                description: description.trim(),
             };
 
-            const response = await createRoomType(data);
+            await createRoomType(payload);
 
-            // console.log("Dữ liệu loại phòng mới: ", data);
             notification.success({
-                title: "Thành công",
-                description: "Loại phòng mới đã được tạo thành công"
+                message: "Tạo loại phòng thành công",
+                description: `Loại phòng "${name}" đã được bổ sung vào cơ sở lưu trú.`,
             });
 
             fetchRoomTypes();
             setIsShowModalNewRoomType(false);
-
-
         } catch (error) {
-            console.error("Lỗi khi tạo loại phòng mới: ", error);
+            console.error("Lỗi khi tạo loại phòng mới:", error);
             notification.error({
-                title: "Lỗi",
-                description: "Có lỗi xảy ra khi tạo loại phòng mới"
+                message: "Tạo loại phòng thất bại",
+                description: error?.response?.data?.message || error?.message || "Có lỗi xảy ra khi tạo loại phòng mới.",
             });
-        }
-        finally {
+        } finally {
             setIsLoading(false);
         }
     };
 
+    const finalPrice = Math.max(0, price - discount);
+
     return (
-        <Spin spinning={isLoading}>
-            <div className="flex flex-col space-y-4">
+        <Spin spinning={isLoading} tip="Đang tải ảnh và lưu loại phòng...">
+            <div className="space-y-4 py-2">
+                {/* Chọn cơ sở lưu trú */}
                 <div>
-                    <h2 className="">Tên loại phòng</h2>
-                    <Input
-                        placeholder="Nhập tên loại phòng"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        status={!name.trim() ? "error" : ""}
+                    <label className="text-xs font-semibold text-slate-700 block mb-1">
+                        Cơ Sở Lưu Trú Trực Thuộc <span className="text-red-500">*</span>:
+                    </label>
+                    <Select
+                        style={{ width: "100%" }}
+                        size="large"
+                        placeholder="Chọn cơ sở lưu trú"
+                        value={targetAccommodationId || undefined}
+                        onChange={(val) => setTargetAccommodationId(val)}
+                        options={(listHotel || []).map((hotel) => ({
+                            value: hotel.accommodationId,
+                            label: (
+                                <div className="flex items-center justify-between">
+                                    <span className="font-semibold text-slate-800">
+                                        {hotel.accommodationName}
+                                    </span>
+                                    <span className="text-xs text-slate-400 font-mono">
+                                        #{hotel.accommodationId}
+                                    </span>
+                                </div>
+                            ),
+                        }))}
                     />
                 </div>
+
+                {/* Tên loại phòng */}
                 <div>
-                    <h2>Mô tả</h2>
-                    {/* <Input placeholder="Nhập mô tả" /> */}
+                    <label className="text-xs font-semibold text-slate-700 block mb-1">
+                        Tên Loại Phòng <span className="text-red-500">*</span>:
+                    </label>
+                    <Input
+                        placeholder="Ví dụ: Deluxe King Hướng Biển, Superior Double..."
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        size="large"
+                    />
+                </div>
+
+                {/* Sức chứa & Số phòng ngủ */}
+                <Row gutter={16}>
+                    <Col span={12}>
+                        <label className="text-xs font-semibold text-slate-700 block mb-1">
+                            Sức Chứa (Khách tối đa):
+                        </label>
+                        <InputNumber
+                            min={1}
+                            max={50}
+                            value={maxGuests}
+                            onChange={(val) => setMaxGuests(Number(val) || 1)}
+                            prefix={<UserOutlined className="text-slate-400" />}
+                            style={{ width: "100%" }}
+                        />
+                    </Col>
+                    <Col span={12}>
+                        <label className="text-xs font-semibold text-slate-700 block mb-1">
+                            Số Phòng Ngủ:
+                        </label>
+                        <InputNumber
+                            min={1}
+                            max={20}
+                            value={numberOfBedrooms}
+                            onChange={(val) => setNumberOfBedrooms(Number(val) || 1)}
+                            prefix={<HomeOutlined className="text-slate-400" />}
+                            style={{ width: "100%" }}
+                        />
+                    </Col>
+                </Row>
+
+                {/* Giá & Giảm giá */}
+                <Row gutter={16}>
+                    <Col span={12}>
+                        <label className="text-xs font-semibold text-slate-700 block mb-1">
+                            Giá Niêm Yết (VNĐ/đêm) <span className="text-red-500">*</span>:
+                        </label>
+                        <InputNumber
+                            value={price}
+                            onChange={(val) => setPrice(Number(val) || 0)}
+                            formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+                            parser={(value) => value?.replace(/\$\s?|(,*)/g, "")}
+                            step={50000}
+                            min={0}
+                            style={{ width: "100%" }}
+                        />
+                    </Col>
+                    <Col span={12}>
+                        <label className="text-xs font-semibold text-slate-700 block mb-1">
+                            Số Tiền Giảm Giá (VNĐ):
+                        </label>
+                        <InputNumber
+                            value={discount}
+                            onChange={(val) => setDiscount(Number(val) || 0)}
+                            formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+                            parser={(value) => value?.replace(/\$\s?|(,*)/g, "")}
+                            step={10000}
+                            min={0}
+                            style={{ width: "100%" }}
+                        />
+                    </Col>
+                </Row>
+
+                {/* Hộp xem trước giá thực tế */}
+                <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 flex items-center justify-between">
+                    <div>
+                        <span className="text-xs font-medium text-emerald-800 block">
+                            Giá Thực Tế Khách Trả (Sau khi giảm giá):
+                        </span>
+                        <span className="text-xs text-emerald-600">
+                            Niêm yết {formatVND(price)} - Giảm {formatVND(discount)}
+                        </span>
+                    </div>
+                    <span className="text-xl font-bold text-emerald-700">
+                        {formatVND(finalPrice)}
+                    </span>
+                </div>
+
+                {/* Mô tả chi tiết */}
+                <div>
+                    <label className="text-xs font-semibold text-slate-700 block mb-1">
+                        Mô Tả Tiện Ích & Không Gian:
+                    </label>
                     <TextArea
-                        placeholder="Nhập mô tả"
-                        rows={4}
+                        placeholder="Mô tả không gian phòng, tầm nhìn, trang bị đặc biệt..."
+                        rows={3}
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
                     />
                 </div>
-                <div>
-                    <h2>Giá phòng</h2>
-                    <Input
-                        placeholder="Nhập giá phòng"
-                        value={price}
-                        onChange={(e) => setPrice(Number(e.target.value))}
-                        status={price === 0 ? "error" : ""}
 
-                    />
-                </div>
+                {/* Danh mục tiện ích */}
                 <div>
-                    <h2>Số phòng ngủ</h2>
-                    <Input
-                        placeholder="Nhập số phòng ngủ"
-                        value={numberOfBedrooms}
-                        onChange={(e) => setNumberOfBedrooms(Number(e.target.value))}
-                    />
-                </div>
-                <div>
-                    <h2>Khách tối đa</h2>
-                    <Input
-                        placeholder="Nhập khách tối đa"
-                        value={maxGuests}
-                        onChange={(e) => setMaxGuests(Number(e.target.value))}
-                    />
-                </div>
-                <div>
-                    <h2>TIện ích</h2>
-                    <Checkbox.Group
-                        options={Amenityoptions}
-                        value={amenities}
-                        onChange={(checkedValues) => setAmenities(checkedValues)}
-                    />
-                </div>
-                <div>
-                    <h2>Hình ảnh đại diện</h2>
-                    <Upload
-                        beforeUpload={(file) => {
-                            file.status = "done";
-                            return false;
-
-                        }}
-                        onChange={({ fileList }) => {
-                            setMainImage(fileList[0].originFileObj);
-                        }}
-                        listType="picture"
-                        maxCount={1}
-                    >
-                        <Button>Upload</Button>
-                    </Upload>
-                </div>
-                <div>
-                    <h2>Hình ảnh khác</h2>
-                    <Upload
-                        beforeUpload={(file) => {
-                            file.status = "done";
-                            return false;
-
-                        }}
-                        onChange={({ fileList }) => {
-                            setOtherImages(fileList.map((file) => file.originFileObj));
-                        }}
-                        listType="picture"
-                        multiple
-                        maxCount={10}
-                    ><Button>Upload</Button></Upload>
-
+                    <label className="text-xs font-semibold text-slate-700 block mb-2">
+                        Tiện Nghi Trong Phòng:
+                    </label>
+                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                        <Checkbox.Group
+                            options={AMENITY_OPTIONS}
+                            value={amenities}
+                            onChange={(vals) => setAmenities(vals)}
+                            className="grid grid-cols-2 gap-2 text-xs"
+                        />
+                    </div>
                 </div>
 
-                <Button color="primary" variant="solid" onClick={handelNewRoomType}>
-                    Thêm loại phòng
-                </Button>
+                {/* Upload hình ảnh */}
+                <Row gutter={16}>
+                    <Col span={12}>
+                        <label className="text-xs font-semibold text-slate-700 block mb-1">
+                            Ảnh Bìa Đại Diện <span className="text-red-500">*</span>:
+                        </label>
+                        <Upload
+                            beforeUpload={(file) => {
+                                file.status = "done";
+                                return false;
+                            }}
+                            onChange={({ fileList }) => {
+                                setMainImage(fileList[0]?.originFileObj || null);
+                            }}
+                            listType="picture"
+                            maxCount={1}
+                        >
+                            <Button icon={<UploadOutlined />}>Chọn Ảnh Bìa</Button>
+                        </Upload>
+                    </Col>
 
-            </div >
+                    <Col span={12}>
+                        <label className="text-xs font-semibold text-slate-700 block mb-1">
+                            Bộ Sưu Tập Ảnh Chi Tiết:
+                        </label>
+                        <Upload
+                            beforeUpload={(file) => {
+                                file.status = "done";
+                                return false;
+                            }}
+                            onChange={({ fileList }) => {
+                                setOtherImages(fileList.map((f) => f.originFileObj).filter(Boolean));
+                            }}
+                            listType="picture"
+                            multiple
+                            maxCount={8}
+                        >
+                            <Button icon={<UploadOutlined />}>Tải Thêm Ảnh (Tối đa 8)</Button>
+                        </Upload>
+                    </Col>
+                </Row>
+
+                <Divider className="my-2" />
+
+                <div className="flex justify-end gap-3 pt-2">
+                    <Button onClick={() => setIsShowModalNewRoomType(false)}>
+                        Hủy Bỏ
+                    </Button>
+                    <Button type="primary" onClick={handleCreateRoomType} loading={isLoading}>
+                        Tạo Loại Phòng Mới
+                    </Button>
+                </div>
+            </div>
         </Spin>
     );
-}
+};
 
 export default NewRoomType;

@@ -79,9 +79,9 @@ const RoomTypeDetail = ({ isShow, setIsShow, roomTypeSelected, onUpdate }) => {
 
         } catch (error) {
             notification.error({
-                title: "Lỗi",
-                description: "Không thể tải chi tiết loại phòng"
-            })
+                message: "Lỗi",
+                description: error?.response?.data?.message || "Không thể tải chi tiết loại phòng"
+            });
         }
         finally {
             setIsLoadingRoomTypes(false);
@@ -116,35 +116,38 @@ const RoomTypeDetail = ({ isShow, setIsShow, roomTypeSelected, onUpdate }) => {
             }
 
 
+            const currentAccommodationId = listHotel[hotelCurrent]?.accommodationId || roomTypeSelected?.accommodationId;
+
             const data = {
+                accommodationId: currentAccommodationId,
                 name,
-                price,
-                discount,
+                price: Number(price),
+                discount: Number(discount) || 0,
                 description,
                 image: imageUpdate,
                 imagesPreview: imagePreviewUrls,
-                bedroom,
-                capacity,
+                bedroom: Number(bedroom) || 1,
+                capacity: Number(capacity) || 1,
                 amenities
-            }
+            };
 
             const response = await updateRoomType(roomTypeSelected.roomtypeId, data);
 
             console.log("Response sau khi cập nhật: ", response);
 
             fetchRoomTypeDetail();
-            onUpdate();
+            if (onUpdate) onUpdate();
             notification.success({
-                title: "Thành công",
+                message: "Thành công",
                 description: "Cập nhật loại phòng thành công"
-            })
+            });
 
         } catch (error) {
             console.error("Lỗi khi cập nhật loại phòng: ", error);
             notification.error({
-                title: "Lỗi",
-                description: "Cập nhật loại phòng thất bại"
-            })
+                message: "Lỗi",
+                description: error?.response?.data?.message || "Cập nhật loại phòng thất bại"
+            });
         }
         finally {
             setIsLoadingRoomTypes(false);
@@ -392,19 +395,25 @@ const RoomTypeDetail = ({ isShow, setIsShow, roomTypeSelected, onUpdate }) => {
                                             }
                                         </div>
                                         <div>
-                                            <p className="text-sm text-gray-500">Khuyến mãi</p>
+                                            <p className="text-sm text-gray-500">Giảm giá (VNĐ)</p>
                                             {
                                                 !isEditting ?
                                                     (
-                                                        <>
-                                                            <p className="text-red-500 font-medium">
-                                                                {roomTypeDetail.discount}%
-                                                            </p>
-                                                        </>
+                                                        <p className="text-red-500 font-medium">
+                                                            {roomTypeDetail.discount ? `${Number(roomTypeDetail.discount).toLocaleString("vi-VN")} VNĐ` : "0 VNĐ"}
+                                                        </p>
                                                     )
                                                     :
                                                     (
-                                                        <InputNumber min={0} max={100} value={discount} onChange={(value) => setDiscount(value)} suffix="%" style={{ width: "100%" }} />
+                                                        <InputNumber
+                                                            min={0}
+                                                            value={discount}
+                                                            onChange={(value) => setDiscount(value)}
+                                                            formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+                                                            parser={(value) => value?.replace(/\$\s?|(,*)/g, "")}
+                                                            suffix=" VNĐ"
+                                                            style={{ width: "100%" }}
+                                                        />
                                                     )
                                             }
                                         </div>
