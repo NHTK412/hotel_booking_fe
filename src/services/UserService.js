@@ -78,6 +78,19 @@ const restoreStaff = async (staffIdOrHotelId, maybeStaffId) => {
 };
 
 /**
+ * Khóa hoặc Mở khóa nhân sự tại một cơ sở lưu trú cụ thể (Admin & Host)
+ * PATCH /users/staff/{accommodationStaffId}/status?status={status}
+ */
+const patchStaffStatus = async (accommodationStaffId, status) => {
+    try {
+        const response = await axios.patch(`/users/staff/${accommodationStaffId}/status?status=${status}`);
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};
+
+/**
  * Khóa / Mở khóa tài khoản người dùng (Admin)
  * PATCH /users/{userId}/status?status={status}
  */
@@ -166,6 +179,32 @@ const getAllStaff = async ({ accommodationId, role, keyword, isDeleted } = {}) =
     }
 };
 
+/**
+ * Lấy danh sách Host / Nhân sự gom nhóm theo người dùng kèm danh sách đơn vị trực thuộc (Admin & Host)
+ * GET /users/hosts
+ */
+const getHostGrouped = async ({ accommodationId, role, keyword, isDeleted } = {}) => {
+    try {
+        const params = {};
+        if (isDeleted !== undefined && isDeleted !== null) {
+            params.isDeleted = isDeleted;
+        }
+        if (accommodationId !== undefined && accommodationId !== null && accommodationId !== "" && accommodationId !== "ALL") {
+            params.accommodationId = accommodationId;
+        }
+        if (role !== undefined && role !== null && role !== "" && role !== "ALL") {
+            params.role = role;
+        }
+        if (keyword !== undefined && keyword !== null && keyword !== "") {
+            params.keyword = keyword;
+        }
+        const response = await axios.get("/users/hosts", { params });
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};
+
 export {
     getUserInfo,
     getListHotel,
@@ -175,11 +214,13 @@ export {
     createStaff,
     deleteStaff,
     restoreStaff,
+    patchStaffStatus,
     patchUserStatus,
     deleteUser,
     restoreUser,
     getUserById,
     addStaffByEmail,
     registerHost,
-    getAllStaff
+    getAllStaff,
+    getHostGrouped
 };

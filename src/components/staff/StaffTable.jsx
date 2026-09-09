@@ -1,8 +1,8 @@
 import { Button, Flex, Modal, notification, Popconfirm, Spin, Table, Tag, Tooltip } from "antd";
 import { useContext, useState } from "react";
 import { globalContext } from "../../context/GlobalContext";
-import { deleteStaff, restoreStaff } from "../../services/UserService";
-import { DeleteOutlined, EyeOutlined } from "@ant-design/icons";
+import { deleteStaff, restoreStaff, patchStaffStatus } from "../../services/UserService";
+import { DeleteOutlined, EyeOutlined, LockOutlined, UnlockOutlined, CheckCircleOutlined, CloseCircleOutlined } from "@ant-design/icons";
 import StaffDetail from "./StaffDetail";
 import { USER_ROLE_CONFIG } from "../../config/themeConfig";
 
@@ -65,6 +65,26 @@ const StaffTable = ({
         }
     }
 
+    const handleUnitStatus = async (record, newStatus) => {
+        try {
+            setIsLoading(true);
+            const staffId = record.accommodationStaffId || record.id;
+            await patchStaffStatus(staffId, newStatus);
+            notification.success({
+                message: newStatus === "ACTIVE" ? "Đã mở khóa nhân viên" : "Đã tạm khóa nhân viên",
+                description: `Đã cập nhật trạng thái làm việc của "${record.name}" tại cơ sở này.`
+            });
+            fetchStaffByHotel(listHotel[hotelCurrent]?.accommodationId, currentPage, currentPageSize, isDeleted);
+        } catch (error) {
+            notification.error({
+                message: "Lỗi",
+                description: error?.response?.data?.message || "Cập nhật trạng thái thất bại"
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    }
+
     const columns = [
         {
             title: "Mã NV",
@@ -111,40 +131,87 @@ const StaffTable = ({
             title: "Trạng thái",
             key: "status",
             align: "center",
-            width: 130,
+            width: 140,
             render: (_, record) => {
                 if (record.isDeleted) {
                     return <Tag color="error">Đã nghỉ việc</Tag>;
                 }
-                return <Tag color="success">Đang làm việc</Tag>;
+                if (record.status === "INACTIVE") {
+                    return <Tag icon={<CloseCircleOutlined />} color="warning">Bị tạm khóa</Tag>;
+                }
+                return <Tag icon={<CheckCircleOutlined />} color="success">Đang làm việc</Tag>;
             }
         },
         {
             title: "Hành động",
             key: "action",
             align: "center",
-            width: 140,
+            width: 150,
             render: (_, record) => {
                 if (!isDeleted) {
+                    const isCurrentlyActive = record.status !== "INACTIVE";
+
                     return (
-                        <Flex gap="small" justify="center">
+                        <Flex gap="small" justify="center" align="center">
+                            {/* Nút Xem chi tiết */}
                             <Tooltip title="Xem chi tiết">
-                                <Button color="default" variant="filled" onClick={() => {
+                                <Button color="default" variant="filled" size="small" onClick={() => {
                                     setIsShowStaffDetail(true);
                                     setCurrentStaffId(record.id);
                                 }}>
                                     <EyeOutlined />
                                 </Button>
                             </Tooltip>
-                            <Tooltip title="Nghỉ việc">
+
+                            {/* Nút Khóa / Mở khóa tại cơ sở này */}
+                            <Tooltip
+                                title={
+                                    isCurrentlyActive
+                                        ? "Tạm khóa nhân viên tại cơ sở"
+                                        : "Mở lại quyền làm việc tại cơ sở"
+                                }
+                            >
+                                <Popconfirm
+                                    title={isCurrentlyActive ? "Tạm khóa quyền làm việc?" : "Mở lại quyền làm việc?"}
+                                    description={
+                                        isCurrentlyActive
+                                            ? `Tạm khóa quyền truy cập của "${record.name}" tại cơ sở lưu trú này?`
+                                            : `Mở lại quyền truy cập cho "${record.name}" tại cơ sở lưu trú này?`
+                                    }
+                                    onConfirm={() => handleUnitStatus(record, isCurrentlyActive ? "INACTIVE" : "ACTIVE")}
+                                    okText={isCurrentlyActive ? "Tạm khóa" : "Mở lại"}
+                                    cancelText="Hủy"
+                                    okButtonProps={isCurrentlyActive ? { danger: true } : { type: "primary" }}
+                                >
+                                    <Button
+                                        type="text"
+                                        size="small"
+                                        className={
+                                            isCurrentlyActive
+                                                ? "text-amber-500 hover:text-amber-600"
+                                                : "text-emerald-600 hover:text-emerald-700"
+                                        }
+                                        icon={
+                                            isCurrentlyActive ? (
+                                                <LockOutlined className="text-base" />
+                                            ) : (
+                                                <UnlockOutlined className="text-base" />
+                                            )
+                                        }
+                                    />
+                                </Popconfirm>
+                            </Tooltip>
+
+                            {/* Nút Nghỉ việc */}
+                            <Tooltip title="Cho nghỉ việc">
                                 <Popconfirm
                                     title="Xác nhận nhân viên nghỉ việc"
                                     description={`Xác nhận nhân viên "${record.name}" đã nghỉ việc tại cơ sở này? Nhân viên sẽ mất toàn bộ quyền truy cập.`}
                                     onConfirm={() => handleDeleteStaff(record)}
-                                    okText="Xác nhận"
+                                    okText="Nghỉ việc"
                                     cancelText="Hủy"
                                     okButtonProps={{ danger: true }}>
-                                    <Button color="danger" variant="filled" >
+                                    <Button color="danger" variant="filled" size="small">
                                         <DeleteOutlined />
                                     </Button>
                                 </Popconfirm>
@@ -161,7 +228,7 @@ const StaffTable = ({
                             okText="Khôi phục"
                             cancelText="Hủy"
                             okButtonProps={{ type: "primary" }}>
-                            <Button className="!bg-green-600 !border-green-600 !text-white hover:!bg-green-500">
+                            <Button className="!bg-green-600 !border-green-600 !text-white hover:!bg-green-500" size="small">
                                 Khôi phục
                             </Button>
                         </Popconfirm >
