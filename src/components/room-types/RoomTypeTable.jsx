@@ -22,8 +22,9 @@ import {
     DollarOutlined,
     PictureOutlined,
     CheckCircleOutlined,
+    RollbackOutlined,
 } from "@ant-design/icons";
-import { deleteRoomType, patchRoomTypePrice } from "../../services/RoomService";
+import { deleteRoomType, patchRoomTypePrice, restoreRoomType, patchRoomTypeStatus } from "../../services/RoomService";
 import { globalContext } from "../../context/GlobalContext";
 import RoomTypeDetail from "./RoomTypeDetail";
 
@@ -59,9 +60,17 @@ const RoomTypeTable = ({
     isLoadingRoomTypes,
     setIsLoadingRoomTypes,
     fetchRoomTypes,
+    isDeletedView = false,
 }) => {
-    const { listHotel, hotelCurrent } = useContext(globalContext);
-    const isManager = listHotel[hotelCurrent]?.staffRole === "ROLE_MANAGER" || listHotel[hotelCurrent]?.staffRole === "ROLE_HOST";
+    const { listHotel, hotelCurrent, role } = useContext(globalContext);
+    const userRole = role || localStorage.getItem("userRole") || sessionStorage.getItem("userRole");
+    const isManager =
+        userRole === "ROLE_HOST" ||
+        userRole === "HOST" ||
+        userRole === "ROLE_ADMIN" ||
+        userRole === "ROLE_MANAGER" ||
+        listHotel[hotelCurrent]?.staffRole === "ROLE_MANAGER" ||
+        listHotel[hotelCurrent]?.staffRole === "ROLE_HOST";
 
     const [isShowRoomTypeDetail, setIsShowRoomTypeDetail] = useState(false);
     const [roomTypeSelected, setRoomTypeSelected] = useState(null);
@@ -120,7 +129,7 @@ const RoomTypeTable = ({
             await deleteRoomType(record.roomtypeId);
             notification.success({
                 message: "Xóa thành công",
-                description: `Đã xóa loại phòng "${record.name}".`,
+                description: `Đã chuyển loại phòng "${record.name}" vào thùng rác.`,
             });
             fetchRoomTypes();
         } catch (error) {
@@ -131,6 +140,52 @@ const RoomTypeTable = ({
             });
         }
     };
+
+    const handleRestore = async (record) => {
+        try {
+            setIsLoadingRoomTypes(true);
+            await restoreRoomType(record.roomtypeId);
+            notification.success({
+                message: "Khôi phục thành công",
+                description: `Đã khôi phục loại phòng "${record.name}" trở lại hoạt động.`,
+            });
+            fetchRoomTypes();
+        } catch (error) {
+            console.error("Lỗi khi khôi phục loại phòng:", error);
+            notification.error({
+                message: "Khôi phục thất bại",
+                description: error?.response?.data?.message || error?.message || "Không thể khôi phục loại phòng.",
+            });
+        } finally {
+            setIsLoadingRoomTypes(false);
+        }
+    };
+
+    const handleToggleRoomTypeStatus = async (record) => {
+        const nextStatus = record.status === "INACTIVE" ? "ACTIVE" : "INACTIVE";
+        try {
+            setIsLoadingRoomTypes(true);
+            await patchRoomTypeStatus(record.roomtypeId, nextStatus);
+            notification.success({
+                message: "Thành công",
+                description:
+                    nextStatus === "INACTIVE"
+                        ? `Đã chuyển loại phòng "${record.name}" sang tạm ngưng nhận khách.`
+                        : `Đã mở nhận khách trở lại cho loại phòng "${record.name}".`,
+            });
+            fetchRoomTypes();
+        } catch (error) {
+            console.error("Lỗi cập nhật trạng thái loại phòng:", error);
+            notification.error({
+                message: "Cập nhật trạng thái thất bại",
+                description: error?.response?.data?.message || "Không thể cập nhật trạng thái loại phòng.",
+            });
+        } finally {
+            setIsLoadingRoomTypes(false);
+        }
+    };
+
+
 
     const columns = [
         {
@@ -174,12 +229,21 @@ const RoomTypeTable = ({
             key: "name",
             width: 220,
             render: (name, record) => (
-                <div className="flex flex-col">
+                <div className="flex flex-col gap-1">
                     <span
-                        className="font-bold text-slate-800 transition-colors cursor-pointer text-sm line-clamp-1"
+                        className="font-bold text-slate-800 transition-colors cursor-pointer text-sm line-clamp-1 hover:text-blue-600"
+                        onClick={() => {
+                            setRoomTypeSelected(record);
+                            setIsShowRoomTypeDetail(true);
+                        }}
                     >
                         {name}
                     </span>
+                    {(isDeletedView || record.isDeleted) && (
+                        <Tag color="error" className="w-fit text-xs scale-90 -ml-1">
+                            Đã xóa
+                        </Tag>
+                    )}
                 </div>
             ),
         },
@@ -187,7 +251,7 @@ const RoomTypeTable = ({
             title: "Đơn vị lưu trú",
             dataIndex: "accommodationName",
             key: "accommodationName",
-            width: 220,
+            width: 150,
             render: (name, record) => (
                 <>
                     {name}
@@ -214,7 +278,7 @@ const RoomTypeTable = ({
             align: "center",
             render: (bedroom) => (
                 <span>
-                    {Number(bedroom || 1)} 
+                    {Number(bedroom || 1)}
                 </span>
             ),
         },
@@ -277,46 +341,88 @@ const RoomTypeTable = ({
         {
             title: "Hành động",
             key: "action",
-            width: 130,
+            width: isDeletedView ? 160 : 130,
             align: "center",
             fixed: "right",
-            render: (_, record) => (
-                <Space size="small">
-                    <Tooltip title="Cập nhật nhanh giá">
-                        <Button
-                            type="text"
-                            icon={<DollarOutlined className="text-emerald-600 text-base" />}
-                            onClick={() => handleOpenQuickEdit(record)}
-                        />
-                    </Tooltip>
+            render: (_, record) => {
+                const isDeleted = isDeletedView || record.isDeleted;
 
-                    <Tooltip title="Xem chi tiết & Quản lý phòng vật lý">
-                        <Button
-                            type="text"
-                            icon={<EyeOutlined className="text-blue-600 text-base" />}
-                            onClick={() => {
-                                setRoomTypeSelected(record);
-                                setIsShowRoomTypeDetail(true);
-                            }}
-                        />
-                    </Tooltip>
+                if (isDeleted) {
+                    return (
+                        <Space size="small">
+                            {isManager && (
+                                <Tooltip title="Khôi phục loại phòng này">
+                                    <Popconfirm
+                                        title="Khôi phục loại phòng?"
+                                        description={`Bạn có chắc muốn khôi phục lại "${record.name}" không? Loại phòng sẽ hiển thị hoạt động trở lại.`}
+                                        onConfirm={() => handleRestore(record)}
+                                        okText="Khôi phục"
+                                        cancelText="Hủy"
+                                    >
+                                        <Button
+                                            type="primary"
+                                            size="small"
+                                            icon={<RollbackOutlined />}
+                                            className="bg-emerald-600 hover:bg-emerald-700 flex items-center text-xs"
+                                        >
+                                            Khôi phục
+                                        </Button>
+                                    </Popconfirm>
+                                </Tooltip>
+                            )}
 
-                    {isManager && (
-                        <Tooltip title="Xóa loại phòng">
-                            <Popconfirm
-                                title="Xác nhận xóa loại phòng"
-                                description={`Bạn có chắc chắn muốn xóa "${record.name}" không?`}
-                                onConfirm={() => handleDelete(record)}
-                                okText="Xóa"
-                                cancelText="Hủy"
-                                okButtonProps={{ danger: true }}
-                            >
-                                <Button type="text" danger icon={<DeleteOutlined className="text-base" />} />
-                            </Popconfirm>
+                            <Tooltip title="Xem chi tiết & Quản lý phòng vật lý">
+                                <Button
+                                    type="text"
+                                    icon={<EyeOutlined className="text-blue-600 text-base" />}
+                                    onClick={() => {
+                                        setRoomTypeSelected(record);
+                                        setIsShowRoomTypeDetail(true);
+                                    }}
+                                />
+                            </Tooltip>
+                        </Space>
+                    );
+                }
+
+                return (
+                    <Space size="small">
+                        <Tooltip title="Cập nhật nhanh giá">
+                            <Button
+                                type="text"
+                                icon={<DollarOutlined className="text-emerald-600 text-base" />}
+                                onClick={() => handleOpenQuickEdit(record)}
+                            />
                         </Tooltip>
-                    )}
-                </Space>
-            ),
+
+                        <Tooltip title="Xem chi tiết & Quản lý phòng vật lý">
+                            <Button
+                                type="text"
+                                icon={<EyeOutlined className="text-blue-600 text-base" />}
+                                onClick={() => {
+                                    setRoomTypeSelected(record);
+                                    setIsShowRoomTypeDetail(true);
+                                }}
+                            />
+                        </Tooltip>
+
+                        {isManager && (
+                            <Tooltip title="Xóa loại phòng">
+                                <Popconfirm
+                                    title="Xác nhận xóa loại phòng"
+                                    description={`Bạn có chắc chắn muốn chuyển "${record.name}" vào thùng rác không?`}
+                                    onConfirm={() => handleDelete(record)}
+                                    okText="Xóa"
+                                    cancelText="Hủy"
+                                    okButtonProps={{ danger: true }}
+                                >
+                                    <Button type="text" danger icon={<DeleteOutlined className="text-base" />} />
+                                </Popconfirm>
+                            </Tooltip>
+                        )}
+                    </Space>
+                );
+            },
         },
     ];
 

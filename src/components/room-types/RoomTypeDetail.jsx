@@ -1,11 +1,12 @@
-import { Button, Divider, Image, Modal, notification, Spin, Table, Tag, Row, Col, Card, Space, Tooltip, InputNumber, Rate, Checkbox, Upload, Input, Form, Tabs, Badge } from "antd";
+import { Button, Divider, Image, Modal, notification, Spin, Table, Tag, Row, Col, Card, Space, Tooltip, InputNumber, Rate, Checkbox, Upload, Input, Form, Tabs, Badge, Popconfirm } from "antd";
 import { useContext, useEffect, useState } from "react";
-import { getListRoomByRoomTypeId, getRoomTypeDetail, updateRoomType } from "../../services/RoomService";
-import { StarOutlined, HomeOutlined, WifiOutlined, EnvironmentOutlined, StarFilled, EditOutlined, DeleteOutlined, SaveOutlined, UploadOutlined, LoadingOutlined, PlusOutlined, InfoCircleOutlined, ApartmentOutlined } from "@ant-design/icons";
+import { getListRoomByRoomTypeId, getRoomTypeDetail, updateRoomType, restoreRoomType } from "../../services/RoomService";
+import { StarOutlined, HomeOutlined, WifiOutlined, EnvironmentOutlined, StarFilled, EditOutlined, DeleteOutlined, SaveOutlined, UploadOutlined, LoadingOutlined, PlusOutlined, InfoCircleOutlined, ApartmentOutlined, RollbackOutlined } from "@ant-design/icons";
 import TextArea from "antd/es/input/TextArea";
 import { uploadFile, uploadFileMultiple } from "../../services/UploadFileService";
 import { globalContext } from "../../context/GlobalContext";
 import RoomTable from "./RoomTable";
+
 
 const RoomTypeDetail = ({ isShow, setIsShow, roomTypeSelected, onUpdate }) => {
     const Amenityoptions = [
@@ -21,12 +22,15 @@ const RoomTypeDetail = ({ isShow, setIsShow, roomTypeSelected, onUpdate }) => {
         { label: "Bao gồm bữa sáng", value: "BREAKFAST_INCLUDED" }
     ];
 
-    const { listHotel, hotelCurrent } = useContext(globalContext);
-    const userRole = localStorage.getItem("userRole") || sessionStorage.getItem("userRole");
+    const { listHotel, hotelCurrent, role } = useContext(globalContext);
+    const userRole = role || localStorage.getItem("userRole") || sessionStorage.getItem("userRole");
     const isManager =
+        userRole === "ROLE_HOST" ||
+        userRole === "HOST" ||
+        userRole === "ROLE_ADMIN" ||
+        userRole === "ROLE_MANAGER" ||
         listHotel[hotelCurrent]?.staffRole === "ROLE_MANAGER" ||
-        listHotel[hotelCurrent]?.staffRole === "ROLE_HOST" ||
-        userRole === "HOST";
+        listHotel[hotelCurrent]?.staffRole === "ROLE_HOST";
 
     const [activeTab, setActiveTab] = useState("info");
     const [name, setName] = useState("");
@@ -99,6 +103,22 @@ const RoomTypeDetail = ({ isShow, setIsShow, roomTypeSelected, onUpdate }) => {
 
 
     const handleUpdateRoomType = async () => {
+        if (!name || !name.trim()) {
+            notification.warning({
+                message: "Thông tin không hợp lệ",
+                description: "Tên loại phòng không được để trống."
+            });
+            return;
+        }
+
+        if (Number(price) <= 0) {
+            notification.warning({
+                message: "Thông tin không hợp lệ",
+                description: "Giá niêm yết của phòng phải lớn hơn 0 VNĐ."
+            });
+            return;
+        }
+
         if (discount < 0 || discount > 100) {
             notification.warning({
                 message: "Giảm giá không hợp lệ",
@@ -126,20 +146,20 @@ const RoomTypeDetail = ({ isShow, setIsShow, roomTypeSelected, onUpdate }) => {
                 imagePreviewUrls = imagesPreview.filter(image => !image.fileOriginal).map(image => image.url);
             }
 
-
             const currentAccommodationId = listHotel[hotelCurrent]?.accommodationId || roomTypeSelected?.accommodationId;
 
             const data = {
                 accommodationId: currentAccommodationId,
-                name,
+                name: name.trim(),
                 price: Number(price),
                 discount: Number(discount) || 0,
-                description,
+                description: description ? description.trim() : "",
                 image: imageUpdate,
                 imagesPreview: imagePreviewUrls,
                 bedroom: Number(bedroom) || 1,
                 capacity: Number(capacity) || 1,
-                amenities
+                star: Number(roomTypeDetail?.star) || 5,
+                amenities: amenities || []
             };
 
             const response = await updateRoomType(roomTypeSelected.roomtypeId, data);
@@ -246,6 +266,7 @@ const RoomTypeDetail = ({ isShow, setIsShow, roomTypeSelected, onUpdate }) => {
                     },
                 }}
             >
+
                 <Spin spinning={isLoadingRoomTypes} description="Đang tải...">
                     {roomTypeDetail && (
                         <>
@@ -259,6 +280,11 @@ const RoomTypeDetail = ({ isShow, setIsShow, roomTypeSelected, onUpdate }) => {
                                         <Tag color="blue" className="font-mono text-xs m-0">
                                             #{roomTypeDetail.roomtypeId}
                                         </Tag>
+                                        {roomTypeDetail.isDeleted && (
+                                            <Tag color="error" className="text-xs m-0">
+                                                Đã xóa
+                                            </Tag>
+                                        )}
                                     </div>
                                 ) : (
                                     <div className="flex items-center gap-2 flex-1 mr-4">
@@ -275,33 +301,70 @@ const RoomTypeDetail = ({ isShow, setIsShow, roomTypeSelected, onUpdate }) => {
                                 )}
 
                                 {isManager && activeTab === "info" && (
-                                    !isEditting ? (
-                                        <Button
-                                            type="primary"
-                                            ghost
-                                            icon={<EditOutlined />}
-                                            onClick={() => setIsEditting(true)}
-                                            className="font-medium"
+                                    roomTypeDetail.isDeleted ? (
+                                        <Popconfirm
+                                            title="Khôi phục loại phòng?"
+                                            description={`Bạn có chắc muốn khôi phục "${roomTypeDetail.name}" trở về trạng thái hoạt động bình thường không?`}
+                                            onConfirm={async () => {
+                                                try {
+                                                    setIsLoadingRoomTypes(true);
+                                                    await restoreRoomType(roomTypeDetail.roomtypeId);
+                                                    notification.success({
+                                                        message: "Khôi phục thành công",
+                                                        description: `Đã khôi phục loại phòng "${roomTypeDetail.name}" thành công.`,
+                                                    });
+                                                    fetchRoomTypeDetail();
+                                                    if (onUpdate) onUpdate();
+                                                } catch (err) {
+                                                    console.error("Lỗi khi khôi phục:", err);
+                                                    notification.error({
+                                                        message: "Khôi phục thất bại",
+                                                        description: err?.response?.data?.message || "Không thể khôi phục loại phòng.",
+                                                    });
+                                                } finally {
+                                                    setIsLoadingRoomTypes(false);
+                                                }
+                                            }}
+                                            okText="Khôi phục"
+                                            cancelText="Hủy"
                                         >
-                                            Chỉnh sửa
-                                        </Button>
-                                    ) : (
-                                        <div className="flex gap-2">
-                                            <Button
-                                                danger
-                                                icon={<DeleteOutlined />}
-                                                onClick={handleClickButtonCancel}
-                                            >
-                                                Hủy
-                                            </Button>
                                             <Button
                                                 type="primary"
-                                                icon={<SaveOutlined />}
-                                                onClick={handleUpdateRoomType}
+                                                icon={<RollbackOutlined />}
+                                                className="bg-emerald-600 hover:bg-emerald-700 font-medium"
                                             >
-                                                Lưu thay đổi
+                                                Khôi phục loại phòng
                                             </Button>
-                                        </div>
+                                        </Popconfirm>
+                                    ) : (
+                                        !isEditting ? (
+                                            <Button
+                                                type="primary"
+                                                ghost
+                                                icon={<EditOutlined />}
+                                                onClick={() => setIsEditting(true)}
+                                                className="font-medium"
+                                            >
+                                                Chỉnh sửa
+                                            </Button>
+                                        ) : (
+                                            <div className="flex gap-2">
+                                                <Button
+                                                    danger
+                                                    icon={<DeleteOutlined />}
+                                                    onClick={handleClickButtonCancel}
+                                                >
+                                                    Hủy
+                                                </Button>
+                                                <Button
+                                                    type="primary"
+                                                    icon={<SaveOutlined />}
+                                                    onClick={handleUpdateRoomType}
+                                                >
+                                                    Lưu thay đổi
+                                                </Button>
+                                            </div>
+                                        )
                                     )
                                 )}
                             </div>
@@ -339,6 +402,10 @@ const RoomTypeDetail = ({ isShow, setIsShow, roomTypeSelected, onUpdate }) => {
                                                                     fallback="https://placehold.co/400x300?text=Image+Error"
                                                                 />
                                                             </div>
+                                                            {isEditting && (
+                                                                <div className="mb-5">
+                                                                </div>
+                                                            )}
                                                             {isEditting && (
                                                                 <Upload
                                                                     showUploadList={false}
@@ -578,7 +645,9 @@ const RoomTypeDetail = ({ isShow, setIsShow, roomTypeSelected, onUpdate }) => {
                                                 <ApartmentOutlined />
                                                 Danh sách phòng vật lý
                                                 <Badge
-                                                    count={listRoom?.length || 0}
+                                                    count={listRoom.filter(
+                                                        (item) => !item.isDeleted
+                                                    ).length || 0}
                                                     overflowCount={999}
                                                     style={{ backgroundColor: "#1677ff", marginLeft: 4 }}
                                                 />
@@ -601,7 +670,7 @@ const RoomTypeDetail = ({ isShow, setIsShow, roomTypeSelected, onUpdate }) => {
                     )}
                 </Spin>
             </Modal>
-</>);
+        </>);
 }
 
 

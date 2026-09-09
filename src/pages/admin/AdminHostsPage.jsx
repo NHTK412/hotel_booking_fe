@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import {
     Table,
     Button,
@@ -12,6 +12,9 @@ import {
     Tooltip,
     Avatar,
     Empty,
+    Tabs,
+    Row,
+    Col,
 } from "antd";
 import {
     UserAddOutlined,
@@ -20,13 +23,24 @@ import {
     UnlockOutlined,
     ReloadOutlined,
     SearchOutlined,
-    HomeOutlined,
     UserOutlined,
     CopyOutlined,
+    DeleteOutlined,
+    UndoOutlined,
+    TeamOutlined,
+    CheckCircleOutlined,
+    CloseCircleOutlined,
+    RollbackOutlined,
+    StopOutlined,
 } from "@ant-design/icons";
 import { getAllAccommodations } from "../../services/AccommodationService";
-import { getAllStaff, getStaffByHotel, deleteStaff, restoreStaff } from "../../services/UserService";
-import { USER_ROLE_CONFIG, ACCOMMODATION_TYPE_CONFIG, getAccommodationTypeConfig } from "../../config/themeConfig";
+import {
+    getAllStaff,
+    patchUserStatus,
+    deleteUser,
+    restoreUser,
+} from "../../services/UserService";
+import { USER_ROLE_CONFIG, getAccommodationTypeConfig } from "../../config/themeConfig";
 import CreateHostModal from "../../components/admin/CreateHostModal";
 import HostDetailModal from "../../components/admin/HostDetailModal";
 
@@ -39,19 +53,23 @@ const ROLE_FILTER_OPTIONS = [
 const STATUS_FILTER_OPTIONS = [
     { value: "ALL", label: "Tất cả trạng thái" },
     { value: "ACTIVE", label: "Đang hoạt động" },
-    { value: "LOCKED", label: "Đã khóa / Tạm ngưng" },
+    { value: "INACTIVE", label: "Tài khoản bị khóa" },
 ];
 
 const AdminHostsPage = () => {
     const [accommodations, setAccommodations] = useState([]);
     const [staffList, setStaffList] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [isActionLoading, setIsActionLoading] = useState(false);
+
+    // Chế độ xem thùng rác (isDeleted)
+    const [isDeletedView, setIsDeletedView] = useState(false);
 
     // Filters
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedHotelId, setSelectedHotelId] = useState("ALL");
     const [selectedRole, setSelectedRole] = useState("ALL");
-    const [statusFilter, setStatusFilter] = useState("ACTIVE");
+    const [statusFilter, setStatusFilter] = useState("ALL");
 
     // Pagination
     const [currentPage, setCurrentPage] = useState(1);
@@ -62,7 +80,7 @@ const AdminHostsPage = () => {
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
     const [selectedStaff, setSelectedStaff] = useState(null);
 
-    // Load danh sách khách sạn
+    // Load danh sách khách sạn để hỗ trợ bộ lọc
     const loadAccommodations = async () => {
         try {
             const response = await getAllAccommodations({
@@ -83,11 +101,13 @@ const AdminHostsPage = () => {
         }
     };
 
-    // Load danh sách nhân sự/host sử dụng endpoint GET /api/users/staff
+    // Load danh sách nhân sự/host từ GET /api/users/staff?isDeleted=...
     const fetchStaffData = useCallback(async () => {
         try {
             setIsLoading(true);
-            const params = {};
+            const params = {
+                isDeleted: isDeletedView,
+            };
             if (selectedHotelId && selectedHotelId !== "ALL") {
                 params.accommodationId = Number(selectedHotelId);
             }
@@ -108,11 +128,13 @@ const AdminHostsPage = () => {
             const aggregated = list.map((item) => ({
                 ...item,
                 id: item.id || item.userId,
+                accommodationStaffId: item.accommodationStaffId || item.id,
                 hotelId: item.accommodationId,
                 hotelName: item.accommodationName || (item.accommodationId ? `Khách sạn #${item.accommodationId}` : "Chưa liên kết"),
                 hotelType: item.hotelType,
                 roleStaff: item.role || item.staffRole || item.systemRole || "ROLE_MANAGER",
-                isDeleted: item.isActive !== undefined ? !item.isActive : !!item.isDeleted,
+                status: item.status || (item.isActive === false ? "INACTIVE" : "ACTIVE"),
+                isDeleted: item.isDeleted !== undefined ? item.isDeleted : (item.isActive !== undefined ? !item.isActive : false),
             }));
 
             setStaffList(aggregated);
@@ -125,7 +147,7 @@ const AdminHostsPage = () => {
         } finally {
             setIsLoading(false);
         }
-    }, [selectedHotelId, selectedRole, searchTerm]);
+    }, [selectedHotelId, selectedRole, searchTerm, isDeletedView]);
 
     useEffect(() => {
         loadAccommodations();
@@ -139,43 +161,73 @@ const AdminHostsPage = () => {
         setSearchTerm("");
         setSelectedHotelId("ALL");
         setSelectedRole("ALL");
-        setStatusFilter("ACTIVE");
+        setStatusFilter("ALL");
         setCurrentPage(1);
     };
 
-    // Thao tác khóa nhân sự (xóa mềm)
-    const handleLockStaff = async (record) => {
+    // 1. Thao tác Khóa / Mở khóa tài khoản (PATCH /api/users/{userId}/status?status=ACTIVE|INACTIVE)
+    const handleToggleUserStatus = async (record, checked) => {
+        const newStatus = checked ? "ACTIVE" : "INACTIVE";
         try {
-            await deleteStaff(record.hotelId, record.id);
+            setIsActionLoading(true);
+            await patchUserStatus(record.id, newStatus);
             notification.success({
-                message: "Đã khóa tài khoản nhân sự",
-                description: `Tài khoản "${record.name}" đã được chuyển sang trạng thái tạm ngưng.`,
+                message: checked ? "Đã mở khóa tài khoản" : "Đã khóa tài khoản",
+                description: `Tài khoản "${record.name || record.email}" đã được chuyển sang trạng thái ${
+                    checked ? "HOẠT ĐỘNG" : "TẠM KHÓA"
+                }.`,
             });
             fetchStaffData();
         } catch (error) {
-            console.error("Lỗi khóa nhân sự:", error);
+            console.error("Lỗi cập nhật trạng thái tài khoản:", error);
             notification.error({
-                message: "Khóa tài khoản thất bại",
-                description: error?.response?.data?.message || error?.message || "Vui lòng thử lại.",
+                message: "Cập nhật thất bại",
+                description: error?.response?.data?.message || error?.message || "Không thể cập nhật trạng thái tài khoản.",
             });
+        } finally {
+            setIsActionLoading(false);
         }
     };
 
-    // Thao tác mở khóa nhân sự
-    const handleRestoreStaff = async (record) => {
+    // 2. Thao tác Xóa mềm tài khoản người dùng (DELETE /api/users/{userId})
+    const handleDeleteUser = async (record) => {
         try {
-            await restoreStaff(record.hotelId, record.id);
+            setIsActionLoading(true);
+            await deleteUser(record.id);
             notification.success({
-                message: "Đã khôi phục tài khoản",
-                description: `Tài khoản "${record.name}" đã được kích hoạt lại thành công.`,
+                message: "Đã chuyển vào thùng rác",
+                description: `Tài khoản "${record.name || record.email}" đã được xóa mềm thành công.`,
             });
             fetchStaffData();
         } catch (error) {
-            console.error("Lỗi khôi phục nhân sự:", error);
+            console.error("Lỗi xóa mềm tài khoản:", error);
+            notification.error({
+                message: "Xóa tài khoản thất bại",
+                description: error?.response?.data?.message || error?.message || "Vui lòng thử lại.",
+            });
+        } finally {
+            setIsActionLoading(false);
+        }
+    };
+
+    // 3. Thao tác Khôi phục tài khoản người dùng (PATCH /api/users/{userId}/restore)
+    const handleRestoreUser = async (record) => {
+        try {
+            setIsActionLoading(true);
+            await restoreUser(record.id);
+            notification.success({
+                message: "Khôi phục thành công",
+                description: `Tài khoản "${record.name || record.email}" đã được khôi phục về trạng thái hoạt động.`,
+            });
+            fetchStaffData();
+        } catch (error) {
+            console.error("Lỗi khôi phục tài khoản:", error);
             notification.error({
                 message: "Khôi phục tài khoản thất bại",
                 description: error?.response?.data?.message || error?.message || "Vui lòng thử lại.",
             });
+        } finally {
+            setIsActionLoading(false);
         }
     };
 
@@ -187,6 +239,14 @@ const AdminHostsPage = () => {
             duration: 1.5,
         });
     };
+
+    // Thống kê nhanh
+    const stats = useMemo(() => {
+        const total = staffList.length;
+        const activeCount = staffList.filter((s) => s.status === "ACTIVE" && !s.isDeleted).length;
+        const lockedCount = staffList.filter((s) => s.status === "INACTIVE" && !s.isDeleted).length;
+        return { total, activeCount, lockedCount };
+    }, [staffList]);
 
     // Lọc dữ liệu hiển thị phía Client
     const filteredStaff = staffList.filter((item) => {
@@ -206,19 +266,21 @@ const AdminHostsPage = () => {
             if (currentRole !== selectedRole) return false;
         }
 
-        // Lọc trạng thái
-        if (statusFilter === "ACTIVE" && item.isDeleted) return false;
-        if (statusFilter === "LOCKED" && !item.isDeleted) return false;
+        // Lọc trạng thái (trong tab Đang hoạt động)
+        if (!isDeletedView) {
+            if (statusFilter === "ACTIVE" && item.status !== "ACTIVE") return false;
+            if (statusFilter === "INACTIVE" && item.status !== "INACTIVE") return false;
+        }
 
         return true;
     });
 
     const columns = [
         {
-            title: "ID Host",
+            title: "ID",
             dataIndex: "id",
             key: "id",
-            width: 95,
+            width: 80,
             align: "center",
             render: (id) => (
                 <span className="font-mono text-xs font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
@@ -288,7 +350,7 @@ const AdminHostsPage = () => {
         {
             title: "Cơ Sở Lưu Trú Phụ Trách",
             key: "hotel",
-            width: 220,
+            width: 200,
             render: (_, record) => (
                 <span className="font-semibold text-slate-800 text-xs truncate block">
                     {record.hotelName || `Khách sạn #${record.hotelId}`}
@@ -296,9 +358,9 @@ const AdminHostsPage = () => {
             ),
         },
         {
-            title: "Loại Cơ Sở Lưu Trú",
+            title: "Loại Chỗ Nghỉ",
             key: "hotelType",
-            width: 170,
+            width: 140,
             render: (_, record) => {
                 const typeCfg = getAccommodationTypeConfig(record.hotelType);
                 return (
@@ -311,7 +373,7 @@ const AdminHostsPage = () => {
         {
             title: "Vai Trò",
             key: "role",
-            width: 170,
+            width: 150,
             render: (_, record) => {
                 const role = record.roleStaff || record.role || "ROLE_MANAGER";
                 const roleConfig = USER_ROLE_CONFIG[role];
@@ -324,86 +386,152 @@ const AdminHostsPage = () => {
         },
         {
             title: "Trạng Thái",
-            key: "status",
-            width: 130,
+            key: "statusTag",
+            width: 140,
             align: "center",
-            render: (_, record) =>
-                record.isDeleted ? (
-                    <Tag color="error" className="font-medium">
-                        Đã khóa
-                    </Tag>
-                ) : (
-                    <Tag color="success" className="font-medium">
+            render: (_, record) => {
+                if (record.isDeleted) {
+                    return (
+                        <Tag color="error">
+                            Đã xóa
+                        </Tag>
+                    );
+                }
+                if (record.status === "INACTIVE") {
+                    return (
+                        <Tag icon={<CloseCircleOutlined />} color="error">
+                            Bị khóa
+                        </Tag>
+                    );
+                }
+                return (
+                    <Tag icon={<CheckCircleOutlined />} color="success">
                         Hoạt động
                     </Tag>
-                ),
+                );
+            },
         },
         {
             title: "Hành Động",
             key: "actions",
-            width: 120,
+            width: 140,
             align: "center",
-            render: (_, record) => (
-                <Space size="small">
-                    <Tooltip title="Xem chi tiết hồ sơ">
-                        <Button
-                            type="text"
-                            icon={<EyeOutlined className="text-blue-600 text-base" />}
-                            onClick={() => {
-                                setSelectedStaff(record);
-                                setIsDetailModalOpen(true);
-                            }}
-                        />
-                    </Tooltip>
+            fixed: "right",
+            render: (_, record) => {
+                if (record.isDeleted) {
+                    return (
+                        <Space size="middle">
+                            <Tooltip title="Khôi phục tài khoản này">
+                                <Popconfirm
+                                    title="Khôi phục tài khoản Host?"
+                                    description={`Khôi phục hoạt động cho tài khoản "${record.name || record.email}" về bình thường?`}
+                                    onConfirm={() => handleRestoreUser(record)}
+                                    okText="Khôi phục"
+                                    cancelText="Hủy"
+                                    okButtonProps={{ type: "primary" }}
+                                >
+                                    <Button
+                                        type="primary"
+                                        size="small"
+                                        icon={<RollbackOutlined />}
+                                        className="bg-emerald-600 hover:bg-emerald-700 text-xs flex items-center"
+                                    >
+                                        Khôi phục
+                                    </Button>
+                                </Popconfirm>
+                            </Tooltip>
+                        </Space>
+                    );
+                }
 
-                    {record.isDeleted ? (
-                        <Tooltip title="Mở khóa tài khoản">
+                const isCurrentlyActive = record.status !== "INACTIVE";
+
+                return (
+                    <Space size="middle">
+                        {/* Nút Xem chi tiết hồ sơ */}
+                        <Tooltip title="Xem chi tiết hồ sơ">
+                            <Button
+                                type="text"
+                                size="small"
+                                icon={<EyeOutlined className="text-blue-600 text-base" />}
+                                onClick={() => {
+                                    setSelectedStaff(record);
+                                    setIsDetailModalOpen(true);
+                                }}
+                            />
+                        </Tooltip>
+
+                        {/* Nút Khóa / Mở khóa tài khoản (Giống phòng thực tế) */}
+                        <Tooltip
+                            title={
+                                isCurrentlyActive
+                                    ? "Khóa tài khoản (chặn đăng nhập)"
+                                    : "Mở khóa tài khoản (cho phép đăng nhập)"
+                            }
+                        >
                             <Popconfirm
-                                title="Mở khóa tài khoản nhân sự"
-                                description={`Khôi phục hoạt động cho nhân sự "${record.name}"?`}
-                                onConfirm={() => handleRestoreStaff(record)}
-                                okText="Mở khóa"
+                                title={isCurrentlyActive ? "Khóa tài khoản Host này?" : "Mở khóa tài khoản Host này?"}
+                                description={
+                                    isCurrentlyActive
+                                        ? `Tài khoản "${record.name || record.email}" sẽ không thể đăng nhập vào hệ thống cho đến khi bạn mở khóa lại.`
+                                        : `Tài khoản "${record.name || record.email}" sẽ được kích hoạt lại và có thể đăng nhập bình thường.`
+                                }
+                                onConfirm={() => handleToggleUserStatus(record, !isCurrentlyActive)}
+                                okText={isCurrentlyActive ? "Khóa tài khoản" : "Mở khóa"}
                                 cancelText="Hủy"
-                                okButtonProps={{ type: "primary" }}
+                                okButtonProps={isCurrentlyActive ? { danger: true } : { type: "primary" }}
                             >
                                 <Button
                                     type="text"
-                                    className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
-                                    icon={<UnlockOutlined className="text-base" />}
+                                    size="small"
+                                    className={
+                                        isCurrentlyActive
+                                            ? "text-amber-500 hover:text-amber-600"
+                                            : "text-emerald-600 hover:text-emerald-700"
+                                    }
+                                    icon={
+                                        isCurrentlyActive ? (
+                                            <LockOutlined className="text-base" />
+                                        ) : (
+                                            <UnlockOutlined className="text-base" />
+                                        )
+                                    }
                                 />
                             </Popconfirm>
                         </Tooltip>
-                    ) : (
-                        <Tooltip title="Khóa tài khoản (Tạm ngưng)">
+
+                        {/* Nút Xóa mềm (Đưa vào thùng rác) */}
+                        <Tooltip title="Xóa mềm (Đưa vào thùng rác)">
                             <Popconfirm
-                                title="Khóa tài khoản nhân sự"
-                                description={`Bạn có chắc muốn khóa tài khoản "${record.name}" không?`}
-                                onConfirm={() => handleLockStaff(record)}
-                                okText="Khóa"
+                                title="Xác nhận xóa mềm tài khoản"
+                                description={`Bạn có chắc muốn chuyển tài khoản "${record.name || record.email}" vào thùng rác không?`}
+                                onConfirm={() => handleDeleteUser(record)}
+                                okText="Xóa mềm"
                                 cancelText="Hủy"
                                 okButtonProps={{ danger: true }}
                             >
                                 <Button
                                     type="text"
+                                    size="small"
                                     danger
-                                    icon={<LockOutlined className="text-base" />}
+                                    icon={<DeleteOutlined className="text-base" />}
                                 />
                             </Popconfirm>
                         </Tooltip>
-                    )}
-                </Space>
-            ),
+                    </Space>
+                );
+            },
         },
     ];
 
     return (
         <div className="space-y-6">
-            {/* Header Section matching AdminAccommodationsPage */}
+            {/* Header Section */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-slate-100">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-800">Quản Lý & Cấp Quyền Tài Khoản Host</h1>
                     <p className="text-slate-500 text-sm mt-1">
-                        Cấp tài khoản quản lý cơ sở lưu trú và giám sát phân quyền chủ khách sạn, lễ tân toàn hệ thống.
+                        Cấp tài khoản quản lý cơ sở lưu trú, quản lý trạng thái khóa/mở và giám sát phân quyền toàn hệ thống.
                     </p>
                 </div>
 
@@ -422,8 +550,101 @@ const AdminHostsPage = () => {
                 </div>
             </div>
 
-            {/* Filter Section matching AdminAccommodationsPage */}
+            {/* Thẻ Thống Kê Nhanh */}
+            <Row gutter={[16, 16]}>
+                <Col xs={24} sm={8}>
+                    <Card className="border-slate-200 shadow-xs" bodyStyle={{ padding: "14px 18px" }}>
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <span className="text-xs text-slate-500 block">
+                                    {isDeletedView ? "Tài Khoản Đã Xóa" : "Tổng Số Tài Khoản"}
+                                </span>
+                                <span className="text-2xl font-bold text-slate-800 mt-0.5 block">
+                                    {stats.total} <span className="text-xs font-normal text-slate-400">nhân sự</span>
+                                </span>
+                            </div>
+                            <div
+                                className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg ${
+                                    isDeletedView
+                                        ? "bg-rose-50 text-rose-600"
+                                        : "bg-blue-50 text-blue-600"
+                                }`}
+                            >
+                                {isDeletedView ? <DeleteOutlined /> : <TeamOutlined />}
+                            </div>
+                        </div>
+                    </Card>
+                </Col>
+
+                {!isDeletedView && (
+                    <>
+                        <Col xs={24} sm={8}>
+                            <Card className="border-slate-200 shadow-xs" bodyStyle={{ padding: "14px 18px" }}>
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <span className="text-xs text-slate-500 block">Đang Hoạt Động</span>
+                                        <span className="text-2xl font-bold text-emerald-600 mt-0.5 block">
+                                            {stats.activeCount} <span className="text-xs font-normal text-slate-400">tài khoản</span>
+                                        </span>
+                                    </div>
+                                    <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg">
+                                        <CheckCircleOutlined />
+                                    </div>
+                                </div>
+                            </Card>
+                        </Col>
+
+                        <Col xs={24} sm={8}>
+                            <Card className="border-slate-200 shadow-xs" bodyStyle={{ padding: "14px 18px" }}>
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <span className="text-xs text-slate-500 block">Đang Bị Khóa</span>
+                                        <span className="text-2xl font-bold text-amber-600 mt-0.5 block">
+                                            {stats.lockedCount} <span className="text-xs font-normal text-slate-400">tài khoản</span>
+                                        </span>
+                                    </div>
+                                    <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-lg">
+                                        <StopOutlined />
+                                    </div>
+                                </div>
+                            </Card>
+                        </Col>
+                    </>
+                )}
+            </Row>
+
+            {/* Filter Section & Tabs */}
             <Card className="border-slate-200 shadow-xs" bodyStyle={{ padding: "16px" }}>
+                {/* Tabs chuyển đổi giữa Danh sách hoạt động và Thùng rác */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-2 border-b border-slate-100">
+                    <Tabs
+                        activeKey={isDeletedView ? "DELETED" : "ACTIVE"}
+                        onChange={(key) => {
+                            setIsDeletedView(key === "DELETED");
+                            setCurrentPage(1);
+                        }}
+                        className="mb-0"
+                        items={[
+                            {
+                                key: "ACTIVE",
+                                label: (
+                                    <span className="font-medium flex items-center gap-2">
+                                        <TeamOutlined /> Danh Sách Host / Quản Lý
+                                    </span>
+                                ),
+                            },
+                            {
+                                key: "DELETED",
+                                label: (
+                                    <span className="font-medium flex items-center gap-2 text-rose-600">
+                                        <DeleteOutlined /> Thùng Rác (Đã Xóa)
+                                    </span>
+                                ),
+                            },
+                        ]}
+                    />
+                </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                     <div>
                         <Input
@@ -474,18 +695,20 @@ const AdminHostsPage = () => {
                         />
                     </div>
 
-                    <div>
-                        <Select
-                            placeholder="Trạng thái"
-                            className="w-full"
-                            value={statusFilter}
-                            onChange={(val) => {
-                                setStatusFilter(val);
-                                setCurrentPage(1);
-                            }}
-                            options={STATUS_FILTER_OPTIONS}
-                        />
-                    </div>
+                    {!isDeletedView && (
+                        <div>
+                            <Select
+                                placeholder="Trạng thái tài khoản"
+                                className="w-full"
+                                value={statusFilter}
+                                onChange={(val) => {
+                                    setStatusFilter(val);
+                                    setCurrentPage(1);
+                                }}
+                                options={STATUS_FILTER_OPTIONS}
+                            />
+                        </div>
+                    )}
                 </div>
             </Card>
 
@@ -495,7 +718,7 @@ const AdminHostsPage = () => {
                 dataSource={filteredStaff}
                 rowKey={(record) => `${record.hotelId}-${record.id}`}
                 loading={isLoading}
-                scroll={{ x: 1250 }}
+                scroll={{ x: 1350 }}
                 pagination={{
                     current: currentPage,
                     pageSize: pageSize,
@@ -506,7 +729,7 @@ const AdminHostsPage = () => {
                         setCurrentPage(page);
                         setPageSize(size);
                     },
-                    showTotal: (total) => `Tổng cộng: ${total} nhân sự`,
+                    showTotal: (total) => `Tổng cộng: ${total} tài khoản`,
                 }}
                 locale={{
                     emptyText: (
@@ -514,7 +737,9 @@ const AdminHostsPage = () => {
                             image={Empty.PRESENTED_IMAGE_SIMPLE}
                             description={
                                 <div className="text-slate-500 text-sm">
-                                    Không tìm thấy dữ liệu quản lý / nhân sự nào phù hợp.
+                                    {isDeletedView
+                                        ? "Thùng rác trống, không có tài khoản nào bị xóa mềm."
+                                        : "Không tìm thấy dữ liệu quản lý / nhân sự nào phù hợp."}
                                 </div>
                             }
                         />

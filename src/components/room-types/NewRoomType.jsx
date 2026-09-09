@@ -7,20 +7,13 @@ import {
     Upload,
     Spin,
     notification,
-    Row,
-    Col,
-    Divider,
-    Alert,
     Select,
+    Image,
 } from "antd";
 import {
     UploadOutlined,
     PlusOutlined,
-    DollarOutlined,
-    WifiOutlined,
-    UserOutlined,
-    HomeOutlined,
-    ShopOutlined,
+    PictureOutlined,
 } from "@ant-design/icons";
 import { uploadFile, uploadFileMultiple } from "../../services/UploadFileService";
 import { createRoomType } from "../../services/RoomService";
@@ -36,16 +29,16 @@ const formatVND = (value) => {
 };
 
 const AMENITY_OPTIONS = [
-    { label: "WiFi Tốc Độ Cao", value: "WIFI" },
-    { label: "Điều Hòa Không Khí", value: "AIR_CONDITIONING" },
-    { label: "Smart TV", value: "TV" },
-    { label: "Tủ Lạnh / Mini Bar", value: "MINI_BAR" },
-    { label: "Dịch Vụ Phòng", value: "ROOM_SERVICE" },
-    { label: "Hồ Bơi", value: "SWIMMING_POOL" },
-    { label: "Phòng Gym", value: "GYM" },
-    { label: "Spa / Massage", value: "SPA" },
-    { label: "Bãi Đỗ Xe", value: "PARKING" },
-    { label: "Bao Gồm Bữa Sáng", value: "BREAKFAST_INCLUDED" },
+    { label: "WiFi", value: "WIFI" },
+    { label: "Điều hòa", value: "AIR_CONDITIONING" },
+    { label: "TV", value: "TV" },
+    { label: "Mini bar", value: "MINI_BAR" },
+    { label: "Dịch vụ phòng", value: "ROOM_SERVICE" },
+    { label: "Hồ bơi", value: "SWIMMING_POOL" },
+    { label: "Phòng gym", value: "GYM" },
+    { label: "Spa", value: "SPA" },
+    { label: "Bãi đỗ xe", value: "PARKING" },
+    { label: "Bao gồm bữa sáng", value: "BREAKFAST_INCLUDED" },
 ];
 
 const NewRoomType = ({ fetchRoomTypes, setIsShowModalNewRoomType }) => {
@@ -133,6 +126,7 @@ const NewRoomType = ({ fetchRoomTypes, setIsShowModalNewRoomType }) => {
                 accommodationId: Number(targetAccommodationId),
                 capacity: Number(maxGuests) || 2,
                 bedroom: Number(numberOfBedrooms) || 1,
+                star: 5.0,
                 description: description.trim(),
             };
 
@@ -160,197 +154,214 @@ const NewRoomType = ({ fetchRoomTypes, setIsShowModalNewRoomType }) => {
 
     return (
         <Spin spinning={isLoading} tip="Đang tải ảnh và lưu loại phòng...">
-            <div className="space-y-4 py-2">
-                {/* Chọn cơ sở lưu trú */}
-                <div>
-                    <label className="text-xs font-semibold text-slate-700 block mb-1">
-                        Cơ Sở Lưu Trú Trực Thuộc <span className="text-red-500">*</span>:
-                    </label>
-                    <Select
-                        style={{ width: "100%" }}
-                        size="large"
-                        placeholder="Chọn cơ sở lưu trú"
-                        value={targetAccommodationId || undefined}
-                        onChange={(val) => setTargetAccommodationId(val)}
-                        options={(listHotel || []).map((hotel) => ({
-                            value: hotel.accommodationId,
-                            label: (
-                                <div className="flex items-center justify-between">
-                                    <span className="font-semibold text-slate-800">
-                                        {hotel.accommodationName}
+            <div className="py-2">
+                <div className="flex flex-col md:flex-row gap-6 items-start">
+                    {/* Cột trái: Hình ảnh */}
+                    <div className="w-full md:w-[350px] shrink-0 flex flex-col gap-4">
+                        {/* Ảnh đại diện */}
+                        <div>
+                            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1.5">
+                                Ảnh đại diện <span className="text-red-500">*</span>
+                            </span>
+                            <div className="mb-5 w-full h-52 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 flex items-center justify-center shadow-2xs">
+                                {mainImage ? (
+                                    <Image
+                                        src={URL.createObjectURL(mainImage)}
+                                        alt="Ảnh đại diện"
+                                        width="100%"
+                                        height="100%"
+                                        style={{ objectFit: "cover" }}
+                                    />
+                                ) : (
+                                    <div className="flex flex-col items-center text-slate-400 text-xs">
+                                        <PictureOutlined className="text-3xl mb-1 text-slate-300" />
+                                        <span>Chưa chọn ảnh đại diện</span>
+                                    </div>
+                                )}
+                            </div>
+                            <Upload
+                                showUploadList={false}
+                                beforeUpload={(file) => {
+                                    setMainImage(file);
+                                    return false;
+                                }}
+                            >
+                                <Button icon={<UploadOutlined />} block>
+                                    {mainImage ? "Thay đổi ảnh đại diện" : "Chọn ảnh đại diện"}
+                                </Button>
+                            </Upload>
+                        </div>
+
+                        {/* Bộ sưu tập ảnh chi tiết */}
+                        <div>
+                            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1.5">
+                                Ảnh chi tiết ({otherImages.length})
+                            </span>
+                            <Upload
+                                beforeUpload={() => false}
+                                listType="picture-card"
+                                fileList={otherImages.map((f, i) => ({
+                                    uid: i,
+                                    name: f.name,
+                                    status: "done",
+                                    url: URL.createObjectURL(f),
+                                    fileOriginal: f,
+                                }))}
+                                onChange={({ file, fileList }) => {
+                                    if (file.status === "removed") {
+                                        setOtherImages(otherImages.filter((_, idx) => idx !== file.uid));
+                                    } else {
+                                        const newFiles = fileList
+                                            .map((item) => item.fileOriginal || item.originFileObj || item)
+                                            .filter(Boolean);
+                                        setOtherImages(newFiles);
+                                    }
+                                }}
+                                multiple
+                            >
+                                <div className="flex flex-col items-center text-slate-500 text-xs">
+                                    <PlusOutlined />
+                                    <span className="mt-1">Thêm ảnh</span>
+                                </div>
+                            </Upload>
+                        </div>
+                    </div>
+
+                    {/* Cột phải: Toàn bộ thông tin chi tiết */}
+                    <div className="flex-1 w-full flex flex-col gap-4">
+                        {/* Chọn cơ sở & Tên loại phòng */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label className="text-xs font-semibold text-slate-700 block mb-1">
+                                    Cơ Sở Lưu Trú <span className="text-red-500">*</span>:
+                                </label>
+                                <Select
+                                    style={{ width: "100%" }}
+                                    placeholder="Chọn cơ sở lưu trú"
+                                    value={targetAccommodationId || undefined}
+                                    onChange={(val) => setTargetAccommodationId(val)}
+                                    options={(listHotel || []).map((hotel) => ({
+                                        value: hotel.accommodationId,
+                                        label: `${hotel.accommodationName} (#${hotel.accommodationId})`,
+                                    }))}
+                                />
+                            </div>
+                            <div>
+                                <label className="text-xs font-semibold text-slate-700 block mb-1">
+                                    Tên Loại Phòng <span className="text-red-500">*</span>:
+                                </label>
+                                <Input
+                                    placeholder="Ví dụ: Deluxe Hướng Biển, VIP Double..."
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Khối Bảng Giá (Pricing Box) */}
+                        <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3.5">
+                            <div className="grid grid-cols-3 gap-3 items-center">
+                                <div>
+                                    <span className="text-xs font-semibold text-slate-500 block mb-1">
+                                        Giá niêm yết <span className="text-red-500">*</span>
                                     </span>
-                                    <span className="text-xs text-slate-400 font-mono">
-                                        #{hotel.accommodationId}
+                                    <InputNumber
+                                        min={0}
+                                        step={50000}
+                                        value={price}
+                                        onChange={(val) => setPrice(Number(val) || 0)}
+                                        suffix="VNĐ"
+                                        style={{ width: "100%" }}
+                                    />
+                                </div>
+                                <div>
+                                    <span className="text-xs font-semibold text-slate-500 block mb-1">
+                                        Giảm giá
+                                    </span>
+                                    <InputNumber
+                                        min={0}
+                                        max={100}
+                                        step={1}
+                                        value={discount}
+                                        onChange={(val) => setDiscount(Number(val) || 0)}
+                                        suffix="%"
+                                        style={{ width: "100%" }}
+                                    />
+                                </div>
+                                <div>
+                                    <span className="text-xs font-semibold text-emerald-700 block mb-1">
+                                        Giá thực tế
+                                    </span>
+                                    <span className="text-base font-bold text-emerald-600 block">
+                                        {formatVND(finalPrice)}
                                     </span>
                                 </div>
-                            ),
-                        }))}
-                    />
-                </div>
+                            </div>
+                        </div>
 
-                {/* Tên loại phòng */}
-                <div>
-                    <label className="text-xs font-semibold text-slate-700 block mb-1">
-                        Tên Loại Phòng <span className="text-red-500">*</span>:
-                    </label>
-                    <Input
-                        placeholder="Ví dụ: Deluxe King Hướng Biển, Superior Double..."
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        size="large"
-                    />
-                </div>
+                        {/* Khối Thông số phòng (Specs Box) */}
+                        <div className="bg-white border border-slate-200/80 rounded-xl p-3.5">
+                            <div className="grid grid-cols-2 gap-3 items-center">
+                                <div>
+                                    <span className="text-xs font-semibold text-slate-500 block mb-1">
+                                        Số phòng ngủ
+                                    </span>
+                                    <InputNumber
+                                        min={1}
+                                        value={numberOfBedrooms}
+                                        onChange={(val) => setNumberOfBedrooms(Number(val) || 1)}
+                                        style={{ width: "100%" }}
+                                        addonAfter="phòng"
+                                    />
+                                </div>
+                                <div>
+                                    <span className="text-xs font-semibold text-slate-500 block mb-1">
+                                        Sức chứa tối đa
+                                    </span>
+                                    <InputNumber
+                                        min={1}
+                                        value={maxGuests}
+                                        onChange={(val) => setMaxGuests(Number(val) || 1)}
+                                        style={{ width: "100%" }}
+                                        addonAfter="khách"
+                                    />
+                                </div>
+                            </div>
+                        </div>
 
-                {/* Sức chứa & Số phòng ngủ */}
-                <Row gutter={16}>
-                    <Col span={12}>
-                        <label className="text-xs font-semibold text-slate-700 block mb-1">
-                            Sức Chứa (Khách tối đa):
-                        </label>
-                        <InputNumber
-                            min={1}
-                            max={50}
-                            value={maxGuests}
-                            onChange={(val) => setMaxGuests(Number(val) || 1)}
-                            prefix={<UserOutlined className="text-slate-400" />}
-                            style={{ width: "100%" }}
-                        />
-                    </Col>
-                    <Col span={12}>
-                        <label className="text-xs font-semibold text-slate-700 block mb-1">
-                            Số Phòng Ngủ:
-                        </label>
-                        <InputNumber
-                            min={1}
-                            max={20}
-                            value={numberOfBedrooms}
-                            onChange={(val) => setNumberOfBedrooms(Number(val) || 1)}
-                            prefix={<HomeOutlined className="text-slate-400" />}
-                            style={{ width: "100%" }}
-                        />
-                    </Col>
-                </Row>
+                        {/* Khối Mô tả */}
+                        <div>
+                            <span className="text-xs font-semibold text-slate-600 block mb-1.5">
+                                Mô tả loại phòng
+                            </span>
+                            <TextArea
+                                rows={3}
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
+                                placeholder="Nhập mô tả không gian, tầm nhìn, dịch vụ của loại phòng..."
+                                className="rounded-lg text-sm"
+                            />
+                        </div>
 
-                {/* Giá & Giảm giá */}
-                <Row gutter={16}>
-                    <Col span={12}>
-                        <label className="text-xs font-semibold text-slate-700 block mb-1">
-                            Giá Niêm Yết (VNĐ/đêm) <span className="text-red-500">*</span>:
-                        </label>
-                        <InputNumber
-                            value={price}
-                            onChange={(val) => setPrice(Number(val) || 0)}
-                            formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
-                            parser={(value) => value?.replace(/\$\s?|(,*)/g, "")}
-                            step={50000}
-                            min={0}
-                            style={{ width: "100%" }}
-                        />
-                    </Col>
-                    <Col span={12}>
-                        <label className="text-xs font-semibold text-slate-700 block mb-1">
-                            Tỷ Lệ Giảm Giá (%):
-                        </label>
-                        <InputNumber
-                            value={discount}
-                            onChange={(val) => setDiscount(Number(val) || 0)}
-                            min={0}
-                            max={100}
-                            step={1}
-                            suffix="%"
-                            style={{ width: "100%" }}
-                        />
-                    </Col>
-                </Row>
-
-                {/* Hộp xem trước giá thực tế */}
-                <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 flex items-center justify-between">
-                    <div>
-                        <span className="text-xs font-medium text-emerald-800 block">
-                            Giá Thực Tế Khách Trả (Sau khi giảm giá):
-                        </span>
-                        <span className="text-xs text-emerald-600">
-                            Niêm yết {formatVND(price)} - Giảm {discount || 0}%
-                        </span>
-                    </div>
-                    <span className="text-xl font-bold text-emerald-700">
-                        {formatVND(finalPrice)}
-                    </span>
-                </div>
-
-                {/* Mô tả chi tiết */}
-                <div>
-                    <label className="text-xs font-semibold text-slate-700 block mb-1">
-                        Mô Tả Tiện Ích & Không Gian:
-                    </label>
-                    <TextArea
-                        placeholder="Mô tả không gian phòng, tầm nhìn, trang bị đặc biệt..."
-                        rows={3}
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                    />
-                </div>
-
-                {/* Danh mục tiện ích */}
-                <div>
-                    <label className="text-xs font-semibold text-slate-700 block mb-2">
-                        Tiện Nghi Trong Phòng:
-                    </label>
-                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
-                        <Checkbox.Group
-                            options={AMENITY_OPTIONS}
-                            value={amenities}
-                            onChange={(vals) => setAmenities(vals)}
-                            className="grid grid-cols-2 gap-2 text-xs"
-                        />
+                        {/* Khối Tiện nghi */}
+                        <div>
+                            <span className="text-xs font-semibold text-slate-600 block mb-1.5">
+                                Tiện nghi & Dịch vụ
+                            </span>
+                            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                                <Checkbox.Group
+                                    options={AMENITY_OPTIONS}
+                                    value={amenities}
+                                    onChange={(vals) => setAmenities(vals)}
+                                    className="grid grid-cols-2 sm:grid-cols-3 gap-2"
+                                />
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                {/* Upload hình ảnh */}
-                <Row gutter={16}>
-                    <Col span={12}>
-                        <label className="text-xs font-semibold text-slate-700 block mb-1">
-                            Ảnh Bìa Đại Diện <span className="text-red-500">*</span>:
-                        </label>
-                        <Upload
-                            beforeUpload={(file) => {
-                                file.status = "done";
-                                return false;
-                            }}
-                            onChange={({ fileList }) => {
-                                setMainImage(fileList[0]?.originFileObj || null);
-                            }}
-                            listType="picture"
-                            maxCount={1}
-                        >
-                            <Button icon={<UploadOutlined />}>Chọn Ảnh Bìa</Button>
-                        </Upload>
-                    </Col>
-
-                    <Col span={12}>
-                        <label className="text-xs font-semibold text-slate-700 block mb-1">
-                            Bộ Sưu Tập Ảnh Chi Tiết:
-                        </label>
-                        <Upload
-                            beforeUpload={(file) => {
-                                file.status = "done";
-                                return false;
-                            }}
-                            onChange={({ fileList }) => {
-                                setOtherImages(fileList.map((f) => f.originFileObj).filter(Boolean));
-                            }}
-                            listType="picture"
-                            multiple
-                            maxCount={8}
-                        >
-                            <Button icon={<UploadOutlined />}>Tải Thêm Ảnh (Tối đa 8)</Button>
-                        </Upload>
-                    </Col>
-                </Row>
-
-                <Divider className="my-2" />
-
-                <div className="flex justify-end gap-3 pt-2">
+                {/* Footer Buttons */}
+                <div className="flex justify-end gap-2 pt-4 mt-2 border-t border-slate-100">
                     <Button onClick={() => setIsShowModalNewRoomType(false)}>
                         Hủy Bỏ
                     </Button>

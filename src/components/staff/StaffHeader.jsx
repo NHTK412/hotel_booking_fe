@@ -15,7 +15,7 @@ const StaffHeader = ({ currentPageSize, currentPage, fetchStaffByHotel, isDelete
         <div className="flex flex-row justify-between">
             <div className="flex flex-row gap-4 items-center mb-5">
                 <h2 className="text-2xl font-medium">Danh sách nhân viên</h2>
-                <Switch checked={isDeleted} onChange={(checked) => setIsDeleted(checked)} checkedChildren="Đã xóa" unCheckedChildren="Chưa xóa" />
+                <Switch checked={isDeleted} onChange={(checked) => setIsDeleted(checked)} checkedChildren="Đã nghỉ việc" unCheckedChildren="Đang làm việc" />
             </div>
             {
                 !isDeleted && (
