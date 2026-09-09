@@ -32,7 +32,7 @@ const UserInfo = () => {
     const [email, setEmail] = useState("");
     const [phone, setPhone] = useState("");
     const [gender, setGender] = useState(null);
-    const [birthday, setBirthday] = useState("");
+    const [birthday, setBirthday] = useState(null);
     const [address, setAddress] = useState("");
     const [avatar, setAvatar] = useState(null);
 
@@ -44,9 +44,9 @@ const UserInfo = () => {
         setName(userInfo?.name || "");
         setEmail(userInfo?.email || "");
         setPhone(userInfo?.phone || "");
-        const genderObj = genderOptions.find(option => option.label === userInfo?.gender);
+        const genderObj = genderOptions.find(option => option.label === userInfo?.gender || option.value === userInfo?.gender);
         setGender(genderObj?.value || "OTHER");
-        setBirthday(userInfo?.birthday || "");
+        setBirthday(userInfo?.birthday || null);
         setAddress(userInfo?.address || "");
     }, [userInfo]);
 
@@ -66,16 +66,12 @@ const UserInfo = () => {
                 avatarUrl = uploadResult.data.filePath;
             }
 
-            if (birthday.length === 0) {
-                throw new Error("Ngày sinh không được để trống");
-            }
-
             const data = {
                 name,
                 email,
                 phone,
-                gender: gender,
-                birthday,
+                gender: gender || "OTHER",
+                birthday: birthday || null,
                 address,
                 avatarUrl
             };
@@ -114,7 +110,7 @@ const UserInfo = () => {
                                             Lưu
                                         </Button>
                                         <Button onClick={() => {
-                                            setBirthday(userInfo?.birthday || "");
+                                            setBirthday(userInfo?.birthday || null);
                                             setIsEdit(false);
                                         }}>
                                             Hủy
@@ -207,19 +203,21 @@ const UserInfo = () => {
 
 
                                 <div>
-                                    <p className="text-gray-500">Ngày sinh</p>
+                                    <p className="text-gray-500 mb-1">Ngày sinh</p>
 
                                     <DatePicker
                                         disabled={!isEdit}
-                                        value={dayjs(birthday)}
+                                        value={birthday && dayjs(birthday).isValid() ? dayjs(birthday) : null}
                                         format="DD-MM-YYYY"
+                                        placeholder={isEdit ? "Chọn ngày sinh" : "Chưa cập nhật"}
                                         onChange={(date) => {
-                                            if (date) {
-                                                const iso = date.tz("UTC", true).toISOString();
+                                            if (date && date.isValid()) {
+                                                const iso = typeof date.tz === "function"
+                                                    ? date.tz("UTC", true).toISOString()
+                                                    : date.toISOString();
                                                 setBirthday(iso);
                                             } else {
-                                                const iso = dayjs().tz("UTC", true).toISOString();
-                                                setBirthday(iso);
+                                                setBirthday(null);
                                             }
                                         }}
                                         style={!isEdit ? { paddingLeft: 0, width: "100%" } : { width: "100%" }}

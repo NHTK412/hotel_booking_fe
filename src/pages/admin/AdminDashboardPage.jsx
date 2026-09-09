@@ -32,7 +32,7 @@ const AdminDashboardPage = () => {
                             suffix={<span className="text-xs text-slate-400">cơ sở</span>}
                         />
                         <div className="mt-2 flex items-center justify-between text-xs text-slate-500">
-                            <span>Khách sạn & Homestay</span>
+                            <span></span>
                             <Button type="link" size="small" onClick={() => navigate("/admin/accommodations")}>
                                 Chi tiết <ArrowRightOutlined />
                             </Button>
@@ -49,7 +49,7 @@ const AdminDashboardPage = () => {
                             suffix={<span className="text-xs text-slate-400">tài khoản</span>}
                         />
                         <div className="mt-2 flex items-center justify-between text-xs text-slate-500">
-                            <span>Đã kích hoạt</span>
+                            <span></span>
                             <Button type="link" size="small" onClick={() => navigate("/admin/hosts")}>
                                 Cấp Host <ArrowRightOutlined />
                             </Button>
@@ -88,35 +88,7 @@ const AdminDashboardPage = () => {
                 </Col>
             </Row>
 
-            {/* Quick Action Banner */}
-            <Card className="bg-gradient-to-r from-blue-900 to-indigo-800 text-white rounded-xl border-0 shadow-sm">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 p-2">
-                    <div>
-                        <h2 className="text-lg font-bold text-white mb-1">
-                            Sẵn Sàng Triển Khai Các Phân Hệ Tiếp Theo
-                        </h2>
-                        <p className="text-blue-100 text-sm">
-                            Hệ thống đã hoàn tất phân quyền RBAC và cơ chế JWT Token Rotation. Tiến hành thiết lập khách sạn mới hoặc cấp tài khoản Host cho các đối tác.
-                        </p>
-                    </div>
-                    <div className="flex gap-3">
-                        <Button
-                            type="primary"
-                            className="bg-white text-blue-900 font-semibold hover:!bg-blue-50 border-0"
-                            onClick={() => navigate("/admin/accommodations")}
-                        >
-                            Quản Trị Khách Sạn
-                        </Button>
-                        <Button
-                            ghost
-                            className="text-white border-white hover:!text-blue-200 hover:!border-blue-200"
-                            onClick={() => navigate("/admin/hosts")}
-                        >
-                            Cấp Quyền Host
-                        </Button>
-                    </div>
-                </div>
-            </Card>
+
         </div>
     );
 };
