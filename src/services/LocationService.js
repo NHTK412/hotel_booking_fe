@@ -67,11 +67,28 @@ const calculateGeoHash = async (lat, lng) => {
     }
 };
 
+const getCurrentLocation = async ({ subAdministrativeArea, administrativeArea, latitude, longitude } = {}) => {
+    try {
+        const params = new URLSearchParams();
+        if (subAdministrativeArea) params.append("subAdministrativeArea", subAdministrativeArea);
+        if (administrativeArea) params.append("administrativeArea", administrativeArea);
+        if (latitude !== undefined && latitude !== null) params.append("latitude", latitude);
+        if (longitude !== undefined && longitude !== null) params.append("longitude", longitude);
+
+        const response = await axios.get(`/locations/me?${params.toString()}`);
+        return response?.data || response;
+    } catch (error) {
+        console.error("Lỗi xác định vị trí hiện tại:", error);
+        throw error;
+    }
+};
+
 export {
     getAllProvinceNames,
     getDistrictsByProvinceName,
     searchLocations,
     getLocationById,
     getAllLocations,
-    calculateGeoHash
+    calculateGeoHash,
+    getCurrentLocation,
 };
